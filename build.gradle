@@ -5,7 +5,7 @@ version = '0.0.1.0'
 
 jar.archiveName = "$name-${version}.jar"
 buildDir = 'out/gradle'
-libsDirName = '../'
+libsDirName = '../../'
 
 repositories {
     mavenCentral()
