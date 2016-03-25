@@ -4,6 +4,7 @@ apply plugin: 'java'
 version = '0.0.1.0'
 
 jar.archiveName = "$name-${version}.jar"
+buildDir = 'out/gradle'
 libsDirName = '../'
 
 repositories {
@@ -24,3 +25,5 @@ dependencies {
     compile "com.google.protobuf:protobuf-java:2.5.0"
     compile 'junit:junit:4.12'
 }
+
+jar { dependsOn 'test' }

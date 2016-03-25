@@ -1,5 +1,3 @@
-*.class
-*.log
 todo.txt
 tmp
 
@@ -10,5 +8,5 @@ tmp
 
 .gradle/
 
-build/
+out/
 util-mesos*.jar
