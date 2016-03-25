@@ -1,1 +1,7 @@
-# java-mesos-util
+Java Library for Mesos Schedulers
+=================================
+
+Building:
+```
+./gradlew jar
+```
