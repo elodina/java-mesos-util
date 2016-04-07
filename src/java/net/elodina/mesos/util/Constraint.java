@@ -30,7 +30,7 @@ public class Constraint {
                 catch (NumberFormatException e) { throw new IllegalArgumentException(expr); }
 
             condition = new Constraint.GroupBy(groups);
-        } else throw new IllegalArgumentException("unsupported: " + expr);
+        } else throw new IllegalArgumentException(expr);
     }
 
     public String expr() { return expr; }
