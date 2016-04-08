@@ -36,7 +36,7 @@ public class Constraint {
     public String expr() { return expr; }
     public Condition condition() { return condition; }
 
-    public boolean matches(String value) { return matches(value, Collections.<String>emptyList()); }
+    public boolean matches(String value) { return matches(value, null); }
     public boolean matches(String value, Collection<String> values) { return condition.matches(value, values != null ? values : Collections.<String>emptyList()); }
 
     public int hashCode() { return expr.hashCode(); }
