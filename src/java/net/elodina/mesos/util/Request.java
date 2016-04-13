@@ -1,11 +1,9 @@
 package net.elodina.mesos.util;
 
-import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.util.*;
@@ -26,11 +24,21 @@ public class Request {
 
     public Request(Method method, String uri) {
         this.method = method;
-        this.uri = uri;
+        uri(uri);
     }
 
     public String uri() { return uri; }
-    public Request uri(String uri) { this.uri = uri; return this; }
+    public Request uri(String uri) {
+        int qIdx = uri.indexOf("?");
+
+        if (qIdx != -1) {
+            query(uri.substring(qIdx + 1));
+            uri = uri.substring(0, qIdx);
+        }
+
+        this.uri = uri;
+        return this;
+    }
 
 
     public Method method() { return method; }
@@ -93,12 +101,36 @@ public class Request {
                         qs += URLEncoder.encode(v, encoding);
                     }
                 } catch (UnsupportedEncodingException e) {
-                    throw new IllegalStateException(e);
+                    throw new IOError(e);
                 }
             }
         }
 
         return qs.isEmpty() ? null : qs;
+    }
+
+    public Request query(String query) {
+        String encoding = encoding();
+        Values params = new Values(true);
+
+        String[] parts = query.split("&");
+        for (String part : parts) {
+            if (part.isEmpty()) throw new IllegalArgumentException(query);
+
+            String[] nameValue = part.split("=");
+            if (nameValue.length > 2) throw new IllegalArgumentException(query);
+
+            try {
+                String name = URLDecoder.decode(nameValue[0], encoding);
+                String value = nameValue.length > 1 ? URLDecoder.decode(nameValue[1], encoding) : null;
+                params.add(name, value);
+            } catch (UnsupportedEncodingException e) {
+                throw new IOError(e);
+            }
+        }
+
+        this.params.setAll(params.all());
+        return this;
     }
 
     public Response send() throws IOException {
@@ -139,7 +171,7 @@ public class Request {
                 .message(c.getResponseMessage());
 
             response.headers().setAll(c.getHeaderFields());
-            response.bytes(bytes.toByteArray());
+            response.body(bytes.size() > 0 ? bytes.toByteArray() : null);
 
             return response;
         } finally {
@@ -172,6 +204,8 @@ public class Request {
             List<String> v = values.get(name);
             return v != null ? Collections.unmodifiableList(v) : null;
         }
+
+        public Map<String, List<String>> all() { return Collections.unmodifiableMap(values); }
 
         public void setAll(Map<String, List<String>> values) {
             this.values.clear();
@@ -228,7 +262,7 @@ public class Request {
 
         private Values headers = new Values();
 
-        private byte[] bytes;
+        private byte[] body;
 
         public int code() { return code; }
         public Response code(int code) { this.code = code; return this; }
@@ -250,10 +284,10 @@ public class Request {
         public String encoding() { return Request.encoding(contentType()); }
 
 
-        public byte[] bytes() { return bytes; }
-        public Response bytes(byte[] bytes) { this.bytes = bytes; return this; }
+        public byte[] body() { return body; }
+        public Response body(byte[] body) { this.body = body; return this; }
 
 
-        public String asText() { return new String(bytes, Charset.forName(encoding())); }
+        public String asText() { return body != null ? new String(body, Charset.forName(encoding())) : null; }
     }
 }

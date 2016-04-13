@@ -27,29 +27,55 @@ public class RequestTest {
     }
 
     @Test
-    public void contentType() {
+    public void contentType_get() {
         Request request = new Request();
         request.header("Content-Type", "text/html");
         assertEquals("text/html", request.contentType());
     }
 
     @Test
-    public void query() {
+    public void uri_set() {
+        Request request = new Request();
+        request.uri("/path?a=1&b=2");
+
+        assertEquals("/path", request.uri());
+        assertEquals("1", request.param("a"));
+        assertEquals("2", request.param("b"));
+    }
+
+    @Test
+    public void query_get() {
         Request request = new Request();
         assertNull(request.query());
 
+        // all types of params
         request.param("a", "1");
         request.param("b", "2", "3");
         request.param("c", (String) null);
         assertEquals("a=1&b=2&b=3&c", request.query());
-    }
 
-    @Test
-    public void query_url_encoding() {
-        Request request = new Request();
+        // url encoding
+        request.params().clear();
         request.param("a", "=");
         request.param("b", " ");
         assertEquals("a=%3D&b=+", request.query());
+    }
+
+    @Test
+    public void query_set() {
+        Request request = new Request();
+
+        // all types of params
+        request.query("a=1&b=2&b=3&c");
+        assertEquals("1", request.param("a"));
+        assertEquals(Arrays.asList("2", "3"), request.params("b"));
+        assertEquals(null, request.param("c"));
+
+        // url decoding
+        request.params().clear();
+        request.query("a=%3D&b=+");
+        assertEquals("=", request.param("a"));
+        assertEquals(" ", request.param("b"));
     }
 
     @Test
