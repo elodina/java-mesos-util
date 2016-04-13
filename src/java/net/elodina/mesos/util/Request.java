@@ -17,6 +17,8 @@ public class Request {
     private Values params = new Values(true);
     private Values headers = new Values();
 
+    private boolean followRedirects;
+
     public Request() {}
 
     public Request(String uri) { this(Method.GET, uri); }
@@ -48,6 +50,10 @@ public class Request {
     public Request header(String name, String value) { headers.set(name, value); return this; }
     public Request header(String name, String ... values) { headers.set(name, values); return this; }
     public Request headers(Map<String, String> values) { headers.set(values); return this; }
+
+
+    public boolean followRedirects() { return followRedirects; }
+    public Request followRedirects(boolean followRedirects) { this.followRedirects = followRedirects; return this; }
 
 
     public String contentType() { return header("Content-Type"); }
@@ -98,6 +104,7 @@ public class Request {
 
         HttpURLConnection c = (HttpURLConnection) new URL(uri).openConnection();
         try {
+            c.setInstanceFollowRedirects(followRedirects);
             c.setRequestMethod(method.name());
 
             for (String name : headers.names()) {
