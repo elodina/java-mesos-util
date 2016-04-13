@@ -13,9 +13,10 @@ import java.util.*;
 public class Request {
     private String uri;
     private Method method = Method.GET;
+    private Values headers = new Values();
 
     private Values params = new Values(true);
-    private Values headers = new Values();
+    private byte[] body;
 
     private boolean followRedirects;
 
@@ -36,6 +37,14 @@ public class Request {
     public Request method(Method method) { this.method = method; return this; }
 
 
+    public Values headers() { return headers; }
+    public String header(String name) { return headers.get(name); }
+    public List<String> headers(String name) { return headers.all(name); }
+    public Request header(String name, String value) { headers.set(name, value); return this; }
+    public Request header(String name, String ... values) { headers.set(name, values); return this; }
+    public Request headers(Map<String, String> values) { headers.set(values); return this; }
+
+
     public Values params() { return params; }
     public String param(String name) { return params.get(name); }
     public List<String> params(String name) { return params.all(name); }
@@ -44,12 +53,8 @@ public class Request {
     public Request params(Map<String, String> values) { params.set(values); return this; }
 
 
-    public Values headers() { return headers; }
-    public String header(String name) { return headers.get(name); }
-    public List<String> headers(String name) { return headers.all(name); }
-    public Request header(String name, String value) { headers.set(name, value); return this; }
-    public Request header(String name, String ... values) { headers.set(name, values); return this; }
-    public Request headers(Map<String, String> values) { headers.set(values); return this; }
+    public byte[] body() { return body; }
+    public Request body(byte[] body) { this.body = body; return this; }
 
 
     public boolean followRedirects() { return followRedirects; }
@@ -113,8 +118,14 @@ public class Request {
             }
 
             if (method == Method.POST && query != null) {
+                byte[] bytes = query.getBytes("latin-1");
                 c.setDoOutput(true);
-                c.getOutputStream().write(query.getBytes("latin-1"));
+                c.setRequestProperty("Content-Length", "" + bytes.length);
+                c.getOutputStream().write(bytes);
+            } else if (body != null) {
+                c.setDoOutput(true);
+                c.setRequestProperty("Content-Length", "" + body.length);
+                c.getOutputStream().write(body);
             }
 
             ByteArrayOutputStream bytes = new ByteArrayOutputStream();

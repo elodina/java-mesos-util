@@ -4,6 +4,7 @@ import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -123,6 +124,28 @@ public class RequestTest {
         }
     }
 
+    @Test
+    public void send_body() throws IOException {
+        HttpHandler handler = new HttpHandler() {
+            @Override
+            public void response(HttpExchange exchange) throws IOException {
+                exchange.getResponseHeaders().add("Content-Length", "0");
+                exchange.sendResponseHeaders(200, 0);
+            }
+        };
+
+        try(HttpServer server = new HttpServer(handler)) {
+            Request.Response response = new Request(server.getUrl() + "/")
+                .method(Request.Method.PUT)
+                .body("body".getBytes())
+                .send();
+
+            assertEquals(200, response.code());
+            assertEquals("PUT", handler.method);
+            assertEquals("body", new String(handler.body));
+        }
+    }
+
     // Response
     @Test
     public void Response_contentType() {
@@ -136,13 +159,20 @@ public class RequestTest {
     private static class HttpHandler implements com.sun.net.httpserver.HttpHandler {
         private String method;
         private URI uri;
+
         private Headers headers;
+        private byte[] body;
 
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             method = exchange.getRequestMethod();
             uri = exchange.getRequestURI();
             headers = exchange.getRequestHeaders();
+
+            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+            IO.copyAndClose(exchange.getRequestBody(), bytes);
+            body = bytes.toByteArray();
+
             response(exchange);
         }
 
