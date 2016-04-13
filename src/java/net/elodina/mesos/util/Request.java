@@ -1,6 +1,7 @@
 package net.elodina.mesos.util;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
@@ -110,7 +111,10 @@ public class Request {
             }
 
             ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-            IO.copyAndClose(c.getInputStream(), bytes);
+
+            try { IO.copyAndClose(c.getInputStream(), bytes); }
+            catch (FileNotFoundException ignore) {}
+            catch (IOException e) { if (!e.getMessage().contains("Server returned HTTP response code:")) throw e; }
 
             Response response = new Response()
                 .code(c.getResponseCode())

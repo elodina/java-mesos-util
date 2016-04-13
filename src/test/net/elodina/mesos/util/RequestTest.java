@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -66,7 +67,7 @@ public class RequestTest {
         };
 
         try(HttpServer server = new HttpServer(handler)) {
-            Request request = new Request(Request.Method.GET, server.getUrl() + "/")
+            Request request = new Request(server.getUrl() + "/")
                 .header("a", "1", "2").header("b", "3")
                 .param("a", "1", "2").param("b", "3");
 
@@ -95,6 +96,33 @@ public class RequestTest {
         }
     }
 
+    @Test
+    public void send_404_500() throws IOException {
+        final AtomicInteger code = new AtomicInteger(0);
+
+        HttpHandler handler = new HttpHandler() {
+            @Override
+            public void response(HttpExchange exchange) throws IOException {
+                exchange.sendResponseHeaders(code.get(), 0);
+            }
+        };
+
+        try(HttpServer server = new HttpServer(handler)) {
+            // 404
+            code.set(404);
+            Request.Response response = new Request(server.getUrl() + "/").send();
+            assertEquals(404, response.code());
+            assertEquals("Not Found", response.message());
+
+            // 500
+            handler.reset();
+            code.set(500);
+            response = new Request(server.getUrl() + "/").send();
+            assertEquals(500, response.code());
+            assertEquals("Internal Server Error", response.message());
+        }
+    }
+
     // Response
     @Test
     public void Response_contentType() {
@@ -116,6 +144,12 @@ public class RequestTest {
             uri = exchange.getRequestURI();
             headers = exchange.getRequestHeaders();
             response(exchange);
+        }
+
+        public void reset() {
+            method = null;
+            uri = null;
+            headers = null;
         }
 
         public void response(HttpExchange exchange) throws IOException {}
