@@ -137,7 +137,7 @@ public class Request {
         String uri = this.uri;
 
         String query = query();
-        if (query != null && method == Method.GET) uri += "?" + query;
+        if (query != null && method != Method.POST) uri += "?" + query;
 
         HttpURLConnection c = (HttpURLConnection) new URL(uri).openConnection();
         try {
