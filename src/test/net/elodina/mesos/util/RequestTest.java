@@ -9,6 +9,10 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -33,9 +37,9 @@ public class RequestTest {
         assertNull(request.query());
 
         request.param("a", "1");
-        request.param("b", "2");
-        request.param("c", null);
-        assertEquals("a=1&b=2&c", request.query());
+        request.param("b", "2", "3");
+        request.param("c", (String) null);
+        assertEquals("a=1&b=2&b=3&c", request.query());
     }
 
     @Test
@@ -51,8 +55,9 @@ public class RequestTest {
         HttpHandler handler = new HttpHandler() {
             @Override
             public void response(HttpExchange exchange) throws IOException {
-                exchange.getResponseHeaders().set("h1", "1");
-                exchange.getResponseHeaders().set("h2", "2");
+                exchange.getResponseHeaders().add("a", "1");
+                exchange.getResponseHeaders().add("a", "2");
+                exchange.getResponseHeaders().add("b", "3");
 
                 byte[] data = "response".getBytes();
                 exchange.sendResponseHeaders(200, data.length);
@@ -62,8 +67,8 @@ public class RequestTest {
 
         try(HttpServer server = new HttpServer(handler)) {
             Request request = new Request(Request.Method.GET, server.getUrl() + "/")
-                .headers(Strings.parseMap("h1=1,h2=2"))
-                .params(Strings.parseMap("p1=1,p2=2"));
+                .header("a", "1", "2").header("b", "3")
+                .param("a", "1", "2").param("b", "3");
 
             Request.Response response = request.send();
 
@@ -71,19 +76,22 @@ public class RequestTest {
             assertEquals("GET", handler.method);
 
             // params sent
-            assertEquals("/?p1=1&p2=2", "" + handler.uri);
+            assertEquals("/?a=1&a=2&b=3", "" + handler.uri);
 
             // request headers sent
-            assertEquals("1", "" + handler.headers.getFirst("h1"));
-            assertEquals("2", "" + handler.headers.getFirst("h2"));
+            assertEquals(Arrays.asList("1", "2"), handler.headers.get("a"));
+            assertEquals(Arrays.asList("3"), handler.headers.get("b"));
 
             // response code & message
             assertEquals(200, response.code());
             assertEquals("OK", response.message());
 
             // response headers received
-            assertEquals("1", response.header("H1"));
-            assertEquals("2", response.header("H2"));
+            List<String> aValues = new ArrayList<>(response.headers("A"));
+            Collections.sort(aValues);
+
+            assertEquals(Arrays.asList("1", "2"), aValues);
+            assertEquals("3", response.header("B"));
         }
     }
 

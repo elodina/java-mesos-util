@@ -7,15 +7,14 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 public class Request {
     private String uri;
     private Method method = Method.GET;
-    private Map<String, String> params = new LinkedHashMap<>();
-    private Map<String, String> headers = new LinkedHashMap<>();
+
+    private Values params = new Values(true);
+    private Values headers = new Values();
 
     public Request() {}
 
@@ -34,21 +33,23 @@ public class Request {
     public Request method(Method method) { this.method = method; return this; }
 
 
-    public Map<String, String> params() { return Collections.unmodifiableMap(params); }
-    public Request params(Map<String, String> params) { this.params.clear(); this.params.putAll(params); return this; }
-
-    public Request param(String name, String value) { this.params.put(name, value); return this; }
+    public Values params() { return params; }
     public String param(String name) { return params.get(name); }
+    public List<String> params(String name) { return params.all(name); }
+    public Request param(String name, String value) { params.set(name, value); return this; }
+    public Request param(String name, String ... values) { params.set(name, values); return this; }
+    public Request params(Map<String, String> values) { params.set(values); return this; }
 
 
-    public Map<String, String> headers() { return Collections.unmodifiableMap(headers); }
-    public Request headers(Map<String, String> headers) { this.headers.clear(); this.headers.putAll(headers); return this; }
-
-    public Request header(String name, String value) { headers.put(name, value); return this; }
+    public Values headers() { return headers; }
     public String header(String name) { return headers.get(name); }
+    public List<String> headers(String name) { return headers.all(name); }
+    public Request header(String name, String value) { headers.set(name, value); return this; }
+    public Request header(String name, String ... values) { headers.set(name, values); return this; }
+    public Request headers(Map<String, String> values) { headers.set(values); return this; }
 
 
-    public String contentType() { return headers.get("Content-Type"); }
+    public String contentType() { return header("Content-Type"); }
     public Request contentType(String contentType) { header("Content-Type", contentType); return this; }
 
     public String encoding() { return encoding(contentType()); }
@@ -66,19 +67,22 @@ public class Request {
         String qs = "";
         String encoding = encoding();
 
-        for (String name : params.keySet()) {
-            String value = params.get(name);
+        for (String name : params.names()) {
+            List<String> values = params.all(name);
 
-            if (!qs.isEmpty()) qs += "&";
-            try {
-                qs += URLEncoder.encode(name, encoding);
+            for (String v : values) {
+                if (!qs.isEmpty()) qs += "&";
 
-                if (value != null) {
-                    qs += "=";
-                    qs += URLEncoder.encode(params.get(name), encoding);
+                try {
+                    qs += URLEncoder.encode(name, encoding);
+
+                    if (v != null) {
+                        qs += "=";
+                        qs += URLEncoder.encode(v, encoding);
+                    }
+                } catch (UnsupportedEncodingException e) {
+                    throw new IllegalStateException(e);
                 }
-            } catch (UnsupportedEncodingException e) {
-                throw new IllegalStateException(e);
             }
         }
 
@@ -94,8 +98,11 @@ public class Request {
         HttpURLConnection c = (HttpURLConnection) new URL(uri).openConnection();
         try {
             c.setRequestMethod(method.name());
-            for (String name : headers.keySet())
-                c.setRequestProperty(name, headers.get(name));
+
+            for (String name : headers.names()) {
+                List<String> values = headers.all(name);
+                for (String value : values) c.addRequestProperty(name, value);
+            }
 
             if (method == Method.POST && query != null) {
                 c.setDoOutput(true);
@@ -109,11 +116,7 @@ public class Request {
                 .code(c.getResponseCode())
                 .message(c.getResponseMessage());
 
-            Map<String, String> headers = new LinkedHashMap<>();
-            for (String name : c.getHeaderFields().keySet())
-                headers.put(name, c.getHeaderField(name));
-
-            response.headers(headers);
+            response.headers().setAll(c.getHeaderFields());
             response.bytes(bytes.toByteArray());
 
             return response;
@@ -126,11 +129,82 @@ public class Request {
         GET, HEAD, POST, PUT, DELETE, TRACE, OPTIONS
     }
 
+    public static class Values {
+        private boolean allowNulls;
+
+        public Values() { this(false); }
+        public Values(boolean allowNulls) {
+            this.allowNulls = allowNulls;
+        }
+
+        private Map<String, List<String>> values = new LinkedHashMap<>();
+
+        public Set<String> names() { return Collections.unmodifiableSet(values.keySet()); }
+
+        public String get(String name) {
+            List<String> v = values.get(name);
+            return v != null && !v.isEmpty() ? v.get(0) : null;
+        }
+
+        public List<String> all(String name) {
+            List<String> v = values.get(name);
+            return v != null ? Collections.unmodifiableList(v) : null;
+        }
+
+        public void setAll(Map<String, List<String>> values) {
+            this.values.clear();
+            for (String name : values.keySet())
+                set(name, values.get(name));
+        }
+
+        public void set(Map<String, String> values) {
+            for (String name : values.keySet())
+                set(name, values.get(name));
+        }
+
+        public void set(String name, String value) { values.put(name, new ArrayList<>(Arrays.asList(checkNull(value)))); }
+
+        public void set(String name, String ... values) { set(name, Arrays.asList(values)); }
+
+        public void set(String name, List<String> values) { this.values.put(name, checkNulls(new ArrayList<>(values))); }
+
+        public void add(String name, String value) {
+            if (!values.containsKey(name)) values.put(name, new ArrayList<String>());
+            values.get(name).add(checkNull(value));
+        }
+
+        public void add(String name, String ... values) { add(name, Arrays.asList(values)); }
+
+        public void add(String name, List<String> values) {
+            if (!this.values.containsKey(name)) this.values.put(name, new ArrayList<String>());
+            this.values.get(name).addAll(checkNulls(values));
+        }
+
+        private String checkNull(String value) {
+            if (!allowNulls && value == null)
+                throw new NullPointerException();
+            return value;
+        }
+
+        private List<String> checkNulls(List<String> values) {
+            for (String value : values) {
+                if (!allowNulls && value == null)
+                    throw new NullPointerException();
+            }
+            return values;
+        }
+
+        public void remove(String name) { values.remove(name); }
+
+        public void clear() { values.clear(); }
+
+    }
+
     public static class Response {
         private int code;
         private String message;
 
-        private Map<String, String> headers = new LinkedHashMap<>();
+        private Values headers = new Values();
 
         private byte[] bytes;
 
@@ -141,11 +215,12 @@ public class Request {
         public Response message(String message) { this.message = message; return this; }
 
 
-        public Map<String, String> headers() { return Collections.unmodifiableMap(headers); }
-        public Response headers(Map<String, String> headers) { this.headers.clear(); this.headers.putAll(headers); return this; }
-
-        public Response header(String name, String value) { headers.put(name, value); return this; }
+        public Values headers() { return headers; }
         public String header(String name) { return headers.get(name); }
+        public List<String> headers(String name) { return headers.all(name); }
+        public Response header(String name, String value) { headers.set(name, value); return this; }
+        public Response header(String name, String ... values) { headers.set(name, values); return this; }
+        public Response headers(Map<String, String> values) { headers.set(values); return this; }
 
         public String contentType() { return header("Content-Type"); }
         public Response contentType(String contentType) { header("Content-Type", contentType); return this; }
