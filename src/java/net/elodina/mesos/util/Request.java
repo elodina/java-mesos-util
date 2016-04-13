@@ -150,7 +150,7 @@ public class Request {
             }
 
             if (method == Method.POST && query != null) {
-                byte[] bytes = query.getBytes("latin-1");
+                byte[] bytes = query.getBytes("latin1");
                 c.setDoOutput(true);
                 c.setRequestProperty("Content-Length", "" + bytes.length);
                 c.getOutputStream().write(bytes);
@@ -288,6 +288,6 @@ public class Request {
         public Response body(byte[] body) { this.body = body; return this; }
 
 
-        public String asText() { return body != null ? new String(body, Charset.forName(encoding())) : null; }
+        public String text() { return body != null ? new String(body, Charset.forName(encoding())) : null; }
     }
 }

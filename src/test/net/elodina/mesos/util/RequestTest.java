@@ -100,7 +100,7 @@ public class RequestTest {
 
             Request.Response response = request.send();
 
-            assertEquals("response", response.asText());
+            assertEquals("response", response.text());
             assertEquals("GET", handler.method);
 
             // params sent
