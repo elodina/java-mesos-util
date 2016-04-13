@@ -92,7 +92,7 @@ public class IO {
             String value = replacements.get(regex);
 
             Matcher matcher = Pattern.compile(regex).matcher(content);
-            if (!ignoreMisses && !matcher.find()) throw new IllegalStateException("regex $regex not found in file " + file);
+            if (!ignoreMisses && !matcher.find()) throw new IllegalStateException("regex " + regex + " not found in file " + file);
 
             content = matcher.replaceAll(value);
         }
