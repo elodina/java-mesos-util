@@ -101,7 +101,7 @@ public class Resource extends Base {
         return this;
     }
 
-    private void parse(String expr) {
+    public Resource parse(String expr) {
         // cpus:0.5
         // mem:1024
         // disk:73390
@@ -133,9 +133,11 @@ public class Resource extends Base {
             default:
                 throw new IllegalArgumentException(expr);
         }
+
+        return this;
     }
 
-    private String format() {
+    public String format() {
         // see parse
         String s = "";
 

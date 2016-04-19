@@ -46,4 +46,22 @@ public class ResourceTest {
         assertEquals("mem(kafka):1024", "" + new Resource("mem(kafka):1024"));
         assertEquals("ports:0..10,20..30", "" + new Resource("ports:0..10,20..30"));
     }
+
+    @Test
+    public void proto0_to_from() {
+        Resource resource = new Resource("cpus(kafka):0.5");
+        org.apache.mesos.Protos.Resource message = resource.proto0();
+
+        Resource read = new Resource().proto0(message);
+        assertEquals("" + resource, "" + read);
+    }
+
+    @Test
+    public void proto1_to_from() {
+        Resource resource = new Resource("cpus(kafka):0.5");
+        org.apache.mesos.v1.Protos.Resource message = resource.proto1();
+
+        Resource read = new Resource().proto1(message);
+        assertEquals("" + resource, "" + read);
+    }
 }
