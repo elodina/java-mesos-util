@@ -2,11 +2,9 @@ package net.elodina.mesos.api;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.GeneratedMessage;
+import net.elodina.mesos.util.Strings;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class Task extends Base {
     private String name;
@@ -14,7 +12,7 @@ public class Task extends Base {
     private String slaveId;
 
     private List<Resource> resources = new ArrayList<>();
-    private Exec exec;
+    private Executor executor;
     private Command command;
 
     private byte[] data;
@@ -33,8 +31,8 @@ public class Task extends Base {
     public Task resources(List<Resource> resources) { this.resources.clear(); this.resources.addAll(resources); return this; }
     public Task resources(Resource ... resources) { return resources(Arrays.asList(resources)); }
 
-    public Exec exec() { return exec; }
-    public Task exec(Exec exec) { this.exec = exec; return this; }
+    public Executor executor() { return executor; }
+    public Task executor(Executor executor) { this.executor = executor; return this; }
 
     public Command command() { return command; }
     public Task command(Command command) { this.command = command; return this; }
@@ -54,7 +52,7 @@ public class Task extends Base {
         for (Resource resource : resources) r.add(resource.proto0());
         builder.addAllResources(r);
 
-        if (exec != null) builder.setExecutor(exec.proto0());
+        if (executor != null) builder.setExecutor(executor.proto0());
         if (command != null) builder.setCommand(command.proto0());
 
         if (data != null) builder.setData(ByteString.copyFrom(data));
@@ -73,7 +71,7 @@ public class Task extends Base {
         for (org.apache.mesos.Protos.Resource resource : task.getResourcesList())
             resources.add(new Resource().proto0(resource));
 
-        if (task.hasExecutor()) exec = new Exec().proto0(task.getExecutor());
+        if (task.hasExecutor()) executor = new Executor().proto0(task.getExecutor());
         if (task.hasCommand()) command = new Command().proto0(task.getCommand());
 
         if (task.hasData()) data = task.getData().toByteArray();
@@ -92,7 +90,7 @@ public class Task extends Base {
         for (Resource resource : resources) r.add(resource.proto1());
         builder.addAllResources(r);
 
-        if (exec != null) builder.setExecutor(exec.proto1());
+        if (executor != null) builder.setExecutor(executor.proto1());
         if (command != null) builder.setCommand(command.proto1());
 
         if (data != null) builder.setData(ByteString.copyFrom(data));
@@ -111,10 +109,146 @@ public class Task extends Base {
         for (org.apache.mesos.v1.Protos.Resource resource : task.getResourcesList())
             resources.add(new Resource().proto1(resource));
 
-        if (task.hasExecutor()) exec = new Exec().proto1(task.getExecutor());
+        if (task.hasExecutor()) executor = new Executor().proto1(task.getExecutor());
         if (task.hasCommand()) command = new Command().proto1(task.getCommand());
 
         if (task.hasData()) data = task.getData().toByteArray();
         return this;
+    }
+
+    public static class Executor extends Base {
+        private String id;
+        private String name;
+        private String frameworkId;
+
+        private Command command;
+        private byte[] data;
+
+        public String id() { return id; }
+        public Executor id(String id) { this.id = id; return this; }
+
+        public String name() { return name; }
+        public Executor name(String name) { this.name = name; return this; }
+
+        public String frameworkId() { return frameworkId; }
+        public Executor frameworkId(String id) { frameworkId = id; return this; }
+
+
+        public Command command() { return command; }
+        public Executor command(Command command) { this.command = command; return this; }
+
+        public byte[] data() { return data; }
+        public Executor data(byte[] data) { this.data = data; return this; }
+
+        public Executor() {}
+        public Executor(String s) { parse(s); }
+
+        @Override
+        public org.apache.mesos.Protos.ExecutorInfo proto0() {
+            org.apache.mesos.Protos.ExecutorInfo.Builder builder = org.apache.mesos.Protos.ExecutorInfo.newBuilder();
+
+            builder.setExecutorId(org.apache.mesos.Protos.ExecutorID.newBuilder().setValue(id));
+            if (name != null) builder.setName(name);
+            builder.setFrameworkId(org.apache.mesos.Protos.FrameworkID.newBuilder().setValue(frameworkId));
+
+            if (command != null) builder.setCommand(command.proto0());
+            if (data != null) builder.setData(ByteString.copyFrom(data));
+
+            return builder.build();
+        }
+
+        @Override
+        public Executor proto0(GeneratedMessage message) {
+            org.apache.mesos.Protos.ExecutorInfo executor = (org.apache.mesos.Protos.ExecutorInfo) message;
+
+            id = executor.getExecutorId().getValue();
+            if (executor.hasName()) name = executor.getName();
+            frameworkId = executor.getFrameworkId().getValue();
+
+            if (executor.hasCommand()) command = new Command().proto0(executor.getCommand());
+            if (executor.hasData()) data = executor.getData().toByteArray();
+
+            return this;
+        }
+
+        @Override
+        public org.apache.mesos.v1.Protos.ExecutorInfo proto1() {
+            org.apache.mesos.v1.Protos.ExecutorInfo.Builder builder = org.apache.mesos.v1.Protos.ExecutorInfo.newBuilder();
+
+            builder.setExecutorId(org.apache.mesos.v1.Protos.ExecutorID.newBuilder().setValue(id));
+            if (name != null) builder.setName(name);
+            builder.setFrameworkId(org.apache.mesos.v1.Protos.FrameworkID.newBuilder().setValue(frameworkId));
+
+            if (command != null) builder.setCommand(command.proto1());
+            if (data != null) builder.setData(ByteString.copyFrom(data));
+
+            return builder.build();
+        }
+
+        @Override
+        public Executor proto1(GeneratedMessage message) {
+            org.apache.mesos.v1.Protos.ExecutorInfo executor = (org.apache.mesos.v1.Protos.ExecutorInfo) message;
+
+            id = executor.getExecutorId().getValue();
+            if (executor.hasName()) name = executor.getName();
+            frameworkId = executor.getFrameworkId().getValue();
+
+            if (executor.hasCommand()) command = new Command().proto1(executor.getCommand());
+            if (executor.hasData()) data = executor.getData().toByteArray();
+
+            return this;
+        }
+
+        public void parse(String s) {
+            List<String> parts = new ArrayList<>();
+
+            StringBuilder buffer = new StringBuilder();
+            int brackets = 0;
+            for (char c : s.toCharArray()) {
+                if (c == ',' && brackets == 0) {
+                    parts.add("" + buffer);
+                    buffer.setLength(0);
+                } else {
+                    if (c == '[') brackets ++;
+                    else if (c == ']') brackets --;
+                    buffer.append(c);
+                }
+            }
+            if (brackets != 0) throw new IllegalArgumentException(s);
+            if (buffer.length() > 0) parts.add("" + buffer);
+
+            Map<String, String> values = new HashMap<>();
+            for (String part : parts) {
+                int colon = part.indexOf(":");
+                if (colon == -1) throw new IllegalArgumentException(s);
+
+                String name = part.substring(0, colon);
+                String value = part.substring(colon + 1);
+                values.put(name.trim(), value.trim());
+            }
+
+            id = values.get("id");
+            name = values.get("name");
+            frameworkId = values.get("frameworkId");
+
+            String commandVal = values.get("command");
+            if (commandVal != null) command = new Command(commandVal.substring(1, commandVal.length() - 1));
+
+            if (values.containsKey("data")) data = Strings.parseHex(values.get("data"));
+
+        }
+
+        public String toString() {
+            List<String> s = new ArrayList<>();
+
+            if (id != null) s.add("id:" + id);
+            if (name != null) s.add("name:" + name);
+            if (frameworkId != null) s.add("frameworkId:" + frameworkId);
+
+            if (command != null) s.add("command:[" + command + "]");
+            if (data != null) s.add("data:" + Strings.formatHex(data));
+
+            return Strings.join(s, ", ");
+        }
     }
 }
