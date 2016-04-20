@@ -1,13 +1,14 @@
 package net.elodina.mesos.api;
 
 import com.google.protobuf.GeneratedMessage;
+import net.elodina.mesos.util.Strings;
 
 import java.util.*;
 
 public class Command extends Base {
     private String value;
     private List<URI> uris = new ArrayList<>();
-    private Map<String, String> environment = new LinkedHashMap<>();
+    private Map<String, String> env = new LinkedHashMap<>();
 
     public String value() { return value; }
     public Command value(String value) { this.value = value; return this; }
@@ -16,8 +17,11 @@ public class Command extends Base {
     public Command uris(URI... uris) { return uris(Arrays.asList(uris)); }
     public Command uris(List<URI> uris) { this.uris.clear(); this.uris.addAll(uris); return this; }
 
-    public Map<String, String> environment() { return Collections.unmodifiableMap(environment); }
-    public Command environment(Map<String, String> environment) { this.environment.clear(); this.environment.putAll(environment); return this; }
+    public Map<String, String> env() { return Collections.unmodifiableMap(env); }
+    public Command env(Map<String, String> env) { this.env.clear(); this.env.putAll(env); return this; }
+
+    public Command() {}
+    public Command(String s) { parse(s); }
 
     @Override
     public org.apache.mesos.Protos.CommandInfo proto0() {
@@ -28,10 +32,10 @@ public class Command extends Base {
         for (URI uri : uris) u.add(uri.proto0());
         builder.addAllUris(u);
 
-        if (!environment.isEmpty()) {
+        if (!env.isEmpty()) {
             org.apache.mesos.Protos.Environment.Builder envBuilder = org.apache.mesos.Protos.Environment.newBuilder();
-            for (String name : environment.keySet()) {
-                String value = environment.get(name);
+            for (String name : env.keySet()) {
+                String value = env.get(name);
                 envBuilder.addVariables(org.apache.mesos.Protos.Environment.Variable.newBuilder().setName(name).setValue(value));
             }
             builder.setEnvironment(envBuilder);
@@ -50,9 +54,9 @@ public class Command extends Base {
             uris.add(new URI().proto0(uri));
 
         if (command.hasEnvironment()) {
-            environment.clear();
+            env.clear();
             for (org.apache.mesos.Protos.Environment.Variable var : command.getEnvironment().getVariablesList())
-                environment.put(var.getName(), var.getValue());
+                env.put(var.getName(), var.getValue());
         }
 
         return this;
@@ -67,10 +71,10 @@ public class Command extends Base {
         for (URI uri : uris) u.add(uri.proto1());
         builder.addAllUris(u);
 
-        if (!environment.isEmpty()) {
+        if (!env.isEmpty()) {
             org.apache.mesos.v1.Protos.Environment.Builder envBuilder = org.apache.mesos.v1.Protos.Environment.newBuilder();
-            for (String name : environment.keySet()) {
-                String value = environment.get(name);
+            for (String name : env.keySet()) {
+                String value = env.get(name);
                 envBuilder.addVariables(org.apache.mesos.v1.Protos.Environment.Variable.newBuilder().setName(name).setValue(value));
             }
             builder.setEnvironment(envBuilder);
@@ -89,21 +93,89 @@ public class Command extends Base {
             uris.add(new URI().proto0(uri));
 
         if (command.hasEnvironment()) {
-            environment = new LinkedHashMap<>();
+            env = new LinkedHashMap<>();
             for (org.apache.mesos.v1.Protos.Environment.Variable var : command.getEnvironment().getVariablesList())
-                environment.put(var.getName(), var.getValue());
+                env.put(var.getName(), var.getValue());
         }
 
         return this;
+    }
+
+    private void parse(String s) {
+        List<String> parts = new ArrayList<>();
+
+        StringBuilder buffer = new StringBuilder();
+        boolean inExpr = false;
+        for (char c : s.toCharArray()) {
+            if (c == ',' && !inExpr) {
+                parts.add("" + buffer);
+                buffer.setLength(0);
+            } else {
+                if (c == '[') inExpr = true;
+                else if (c == ']') inExpr = false;
+                buffer.append(c);
+            }
+        }
+        if (inExpr) throw new IllegalArgumentException(s);
+        if (buffer.length() > 0) parts.add("" + buffer);
+
+        Map<String, String> values = new HashMap<>();
+        for (String part : parts) {
+            int colon = part.indexOf(":");
+            if (colon == -1 && !values.isEmpty()) throw new IllegalArgumentException(s);
+
+            String name = colon == -1 ? "value" : part.substring(0, colon);
+            String value = colon == -1 ? part : part.substring(colon + 1);
+            values.put(name.trim(), value.trim());
+        }
+
+        value = values.get("value");
+
+        String urisVal = values.get("uris");
+        if (urisVal != null) uris = URI.parse(urisVal.substring(1, urisVal.length() - 1));
+
+        String envVal = values.get("env");
+        if (envVal != null) env = Strings.parseMap(envVal.substring(1, envVal.length() - 1));
+
+    }
+
+    public String toString() {
+        String s = "";
+
+        s += value;
+        if (!uris.isEmpty()) s += ", uris:[" + URI.format(uris) + "]";
+        if (!env.isEmpty()) s += ", env:[" + Strings.formatMap(env) + "]";
+
+        return s;
     }
 
     public static class URI extends Base {
         private String value;
         private boolean extract = true;
 
-        public URI() { this(null); }
+        public URI() {}
 
-        public URI(String value) { this(value, false); }
+        public URI(String s) {
+            String[] parts = s.split(",");
+
+            if (parts.length == 1)
+                value = parts[0];
+            else {
+                value = parts[0].trim();
+
+                Map<String, String> values = new HashMap<>();
+                for (int i = 1; i < parts.length; i++) {
+                    String part = parts[i].trim();
+
+                    int colon = part.indexOf(":");
+                    if (colon == -1) throw new IllegalArgumentException(s);
+
+                    values.put(part.substring(0, colon).trim(), part.substring(colon + 1).trim());
+                }
+
+                if (values.containsKey("extract")) extract = Boolean.parseBoolean(values.get("extract"));
+            }
+        }
 
         public URI(String value, boolean extract) {
             value(value);
@@ -154,6 +226,36 @@ public class Command extends Base {
             extract = uri.getExtract();
 
             return this;
+        }
+
+        public int hashCode() {
+            return 31 * value.hashCode() + Boolean.valueOf(extract).hashCode();
+        }
+
+        public boolean equals(Object obj) {
+            if (!(obj instanceof URI)) return false;
+            URI other = (URI) obj;
+            return value.equals(other.value) && extract == other.extract;
+        }
+
+        public String toString() {
+            String s = "";
+
+            s += value;
+            if (!extract) s += ", extract:false";
+
+            return s;
+        }
+
+        public static String format(List<URI> uris) { return Strings.join(uris, ","); }
+
+        public static List<URI> parse(String s) {
+            List<URI> uris = new ArrayList<>();
+
+            for (String p : s.split(","))
+                uris.add(new URI(p.trim()));
+
+            return uris;
         }
     }
 }

@@ -119,7 +119,7 @@ public class Attribute extends Base {
         // a=1;b=2;c=3
         List<Attribute> attributes = new ArrayList<>();
 
-        for (String t : s.split(";")) {
+        for (String t : s.split(",")) {
             t = t.trim();
             if (!t.isEmpty())
                 attributes.add(new Attribute(t));
@@ -129,6 +129,6 @@ public class Attribute extends Base {
     }
 
     public static String format(List<Attribute> attributes) {
-        return Strings.join(attributes, ";");
+        return Strings.join(attributes);
     }
 }

@@ -24,7 +24,7 @@ public class OfferTest {
         assertEquals(Arrays.asList(new Resource("cpus:0.5"), new Resource("mem:1024")), offer.resources());
 
         // attributes
-        offer = new Offer("attributes:[a=0.5;t=abc]");
+        offer = new Offer("attributes:[a=0.5,t=abc]");
         assertEquals(Arrays.asList(new Attribute("a=0.5"), new Attribute("t=abc")), offer.attributes());
     }
 
