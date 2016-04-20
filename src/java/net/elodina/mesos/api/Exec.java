@@ -2,6 +2,12 @@ package net.elodina.mesos.api;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.GeneratedMessage;
+import net.elodina.mesos.util.Strings;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Exec extends Base {
     private String id;
@@ -26,6 +32,9 @@ public class Exec extends Base {
 
     public byte[] data() { return data; }
     public Exec data(byte[] data) { this.data = data; return this; }
+
+    public Exec() {}
+    public Exec(String s) { parse(s); }
 
     @Override
     public org.apache.mesos.Protos.ExecutorInfo proto0() {
@@ -81,5 +90,57 @@ public class Exec extends Base {
         if (executor.hasData()) data = executor.getData().toByteArray();
 
         return this;
+    }
+
+    public void parse(String s) {
+        List<String> parts = new ArrayList<>();
+
+        StringBuilder buffer = new StringBuilder();
+        int brackets = 0;
+        for (char c : s.toCharArray()) {
+            if (c == ',' && brackets == 0) {
+                parts.add("" + buffer);
+                buffer.setLength(0);
+            } else {
+                if (c == '[') brackets ++;
+                else if (c == ']') brackets --;
+                buffer.append(c);
+            }
+        }
+        if (brackets != 0) throw new IllegalArgumentException(s);
+        if (buffer.length() > 0) parts.add("" + buffer);
+
+        Map<String, String> values = new HashMap<>();
+        for (String part : parts) {
+            int colon = part.indexOf(":");
+            if (colon == -1) throw new IllegalArgumentException(s);
+
+            String name = part.substring(0, colon);
+            String value = part.substring(colon + 1);
+            values.put(name.trim(), value.trim());
+        }
+
+        id = values.get("id");
+        name = values.get("name");
+        frameworkId = values.get("frameworkId");
+
+        String commandVal = values.get("command");
+        if (commandVal != null) command = new Command(commandVal.substring(1, commandVal.length() - 1));
+
+        if (values.containsKey("data")) data = Strings.parseHex(values.get("data"));
+
+    }
+
+    public String toString() {
+        List<String> s = new ArrayList<>();
+
+        if (id != null) s.add("id:" + id);
+        if (name != null) s.add("name:" + name);
+        if (frameworkId != null) s.add("frameworkId:" + frameworkId);
+
+        if (command != null) s.add("command:[" + command + "]");
+        if (data != null) s.add("data:" + Strings.formatHex(data));
+
+        return Strings.join(s, ", ");
     }
 }

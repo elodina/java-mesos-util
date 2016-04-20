@@ -41,7 +41,7 @@ public class ResourceTest {
     }
 
     @Test
-    public void proto0_to_from() {
+    public void proto0() {
         Resource resource = new Resource("cpus(kafka):0.5");
         org.apache.mesos.Protos.Resource message = resource.proto0();
 
@@ -50,7 +50,7 @@ public class ResourceTest {
     }
 
     @Test
-    public void proto1_to_from() {
+    public void proto1() {
         Resource resource = new Resource("cpus(kafka):0.5");
         org.apache.mesos.v1.Protos.Resource message = resource.proto1();
 

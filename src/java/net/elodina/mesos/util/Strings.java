@@ -170,4 +170,34 @@ public class Strings {
             return false;
         }
     }
+
+    private static final String HEX_CHARS = "0123456789ABCDEF";
+
+    public static String formatHex(byte[] bytes) {
+        StringBuilder hex = new StringBuilder(2 * bytes.length);
+
+        for (byte b : bytes)
+            hex.append(HEX_CHARS.charAt((b & 0xF0) >> 4)).append(HEX_CHARS.charAt((b & 0x0F)));
+
+        return hex.toString();
+    }
+
+    public static byte[] parseHex(String s) throws IllegalArgumentException {
+        if (s.length() % 2 == 1) throw new IllegalArgumentException(s);
+
+        char[] chars = s.toUpperCase().toCharArray();
+        byte[] bytes = new byte[chars.length / 2];
+
+        for (int i = 0, j = 0; i < chars.length; i += 2, j++) {
+            int high = HEX_CHARS.indexOf(chars[i]);
+            if (high == -1) throw new IllegalArgumentException(s);
+
+            int low = HEX_CHARS.indexOf(chars[i+1]);
+            if (low == -1) throw new IllegalArgumentException(s);
+
+            bytes[j] = (byte)(high << 4 | low);
+        }
+
+        return bytes;
+    }
 }

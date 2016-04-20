@@ -34,7 +34,7 @@ public class CommandTest {
     }
 
     @Test
-    public void proto0_to_from() {
+    public void proto0() {
         Command command = new Command("cmd, env:[a=1,b=2]");
         org.apache.mesos.Protos.CommandInfo message = command.proto0();
 
@@ -43,7 +43,7 @@ public class CommandTest {
     }
 
     @Test
-    public void proto1_to_from() {
+    public void proto1() {
         Command command = new Command("cmd, env:[a=1,b=2]");
         org.apache.mesos.v1.Protos.CommandInfo message = command.proto1();
 
@@ -76,7 +76,7 @@ public class CommandTest {
     }
 
     @Test
-    public void URI_proto0_to_from() {
+    public void URI_proto0() {
         URI uri = new URI("http://localhost, extract:false");
         org.apache.mesos.Protos.CommandInfo.URI message = uri.proto0();
 
@@ -85,7 +85,7 @@ public class CommandTest {
     }
 
     @Test
-    public void URI_proto1_to_from() {
+    public void URI_proto1() {
         URI uri = new URI("http://localhost, extract:false");
         org.apache.mesos.v1.Protos.CommandInfo.URI message = uri.proto1();
 

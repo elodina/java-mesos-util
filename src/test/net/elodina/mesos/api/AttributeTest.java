@@ -29,7 +29,7 @@ public class AttributeTest {
     }
 
     @Test
-    public void proto0_to_from() {
+    public void proto0() {
         Attribute attribute = new Attribute("a=1");
         org.apache.mesos.Protos.Attribute message = attribute.proto0();
 
@@ -38,7 +38,7 @@ public class AttributeTest {
     }
 
     @Test
-    public void proto1_to_from() {
+    public void proto1() {
         Attribute attribute = new Attribute("a=1");
         org.apache.mesos.v1.Protos.Attribute message = attribute.proto1();
 

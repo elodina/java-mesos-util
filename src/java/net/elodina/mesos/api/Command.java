@@ -136,7 +136,6 @@ public class Command extends Base {
 
         String envVal = values.get("env");
         if (envVal != null) env = Strings.parseMap(envVal.substring(1, envVal.length() - 1));
-
     }
 
     public String toString() {

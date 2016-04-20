@@ -36,7 +36,7 @@ public class OfferTest {
     }
 
     @Test
-    public void proto0_to_from() {
+    public void proto0() {
         Offer offer = new Offer("id:1, frameworkId:2, slaveId:3, hostname:host, resources:[mem:1024], attributes:[a=1]");
         org.apache.mesos.Protos.Offer message = offer.proto0();
 
@@ -45,7 +45,7 @@ public class OfferTest {
     }
 
     @Test
-    public void proto1_to_from() {
+    public void proto1() {
         Offer offer = new Offer("id:1, frameworkId:2, slaveId:3, hostname:host, resources:[mem:1024], attributes:[a=1]");
         org.apache.mesos.v1.Protos.Offer message = offer.proto1();
 
