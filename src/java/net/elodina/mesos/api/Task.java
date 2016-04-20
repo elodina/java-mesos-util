@@ -7,8 +7,8 @@ import net.elodina.mesos.util.Strings;
 import java.util.*;
 
 public class Task extends Base {
-    private String name;
     private String id;
+    private String name;
     private String slaveId;
 
     private List<Resource> resources = new ArrayList<>();
@@ -17,11 +17,14 @@ public class Task extends Base {
 
     private byte[] data;
 
-    public String name() { return name; }
-    public Task name(String name) { this.name = name; return this; }
+    public Task() {}
+    public Task(String s) { parse(s); }
 
     public String id() { return id; }
     public Task id(String id) { this.id = id; return this; }
+
+    public String name() { return name; }
+    public Task name(String name) { this.name = name; return this; }
 
     public String slaveId() { return slaveId; }
     public Task slaveId(String id) { slaveId = id; return this; }
@@ -79,7 +82,7 @@ public class Task extends Base {
     }
 
     @Override
-    public GeneratedMessage proto1() {
+    public org.apache.mesos.v1.Protos.TaskInfo proto1() {
         org.apache.mesos.v1.Protos.TaskInfo.Builder builder = org.apache.mesos.v1.Protos.TaskInfo.newBuilder();
 
         builder.setName(name);
@@ -98,7 +101,7 @@ public class Task extends Base {
     }
 
     @Override
-    public Base proto1(GeneratedMessage message) {
+    public Task proto1(GeneratedMessage message) {
         org.apache.mesos.v1.Protos.TaskInfo task = (org.apache.mesos.v1.Protos.TaskInfo) message;
 
         name = task.getName();
@@ -114,6 +117,66 @@ public class Task extends Base {
 
         if (task.hasData()) data = task.getData().toByteArray();
         return this;
+    }
+
+    private void parse(String s) {
+        List<String> parts = new ArrayList<>();
+
+        StringBuilder buffer = new StringBuilder();
+        int brackets = 0;
+        for (char c : s.toCharArray()) {
+            if (c == ',' && brackets == 0) {
+                parts.add("" + buffer);
+                buffer.setLength(0);
+            } else {
+                if (c == '[') brackets ++;
+                else if (c == ']') brackets --;
+                buffer.append(c);
+            }
+        }
+        if (brackets != 0) throw new IllegalArgumentException(s);
+        if (buffer.length() > 0) parts.add("" + buffer);
+
+        Map<String, String> values = new HashMap<>();
+        for (String part : parts) {
+            int colon = part.indexOf(":");
+            if (colon == -1) throw new IllegalArgumentException(s);
+
+            String name = part.substring(0, colon);
+            String value = part.substring(colon + 1);
+            values.put(name.trim(), value.trim());
+        }
+
+        id = values.get("id");
+        name = values.get("name");
+        slaveId = values.get("slaveId");
+
+        String resourcesVal = values.get("resources");
+        if (resourcesVal != null) resources = Resource.parse(resourcesVal.substring(1, resourcesVal.length() - 1));
+
+        String executorVal = values.get("executor");
+        if (executorVal != null) executor = new Executor(executorVal.substring(1, executorVal.length() - 1));
+
+        String commandVal = values.get("command");
+        if (commandVal != null) command = new Command(commandVal.substring(1, commandVal.length() - 1));
+
+        if (values.containsKey("data")) data = Strings.parseHex(values.get("data"));
+    }
+
+    @Override
+    public String toString() {
+        List<String> s = new ArrayList<>();
+
+        if (id != null) s.add("id:" + id);
+        if (name != null) s.add("name:" + name);
+        if (slaveId != null) s.add("slaveId:" + slaveId);
+
+        if (!resources.isEmpty()) s.add("resources:[" + Resource.format(resources) + "]");
+        if (executor != null) s.add("executor:[" + executor + "]");
+        if (command != null) s.add("command:[" + command + "]");
+
+        if (data != null) s.add("data:" + Strings.formatHex(data));
+        return Strings.join(s, ", ");
     }
 
     public static class Executor extends Base {
