@@ -1,6 +1,10 @@
 package net.elodina.mesos.api;
 
 import com.google.protobuf.GeneratedMessage;
+import net.elodina.mesos.util.Strings;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class Resource extends Base {
     private String name;
@@ -117,7 +121,16 @@ public class Resource extends Base {
         return this;
     }
 
-    @Override
+    public int hashCode() {
+        return 31 * (31 * name.hashCode() + value.hashCode()) + role.hashCode();
+    }
+
+    public boolean equals(Object obj) {
+        if (!(obj instanceof Resource)) return false;
+        Resource other = (Resource) obj;
+        return name.equals(other.name) && value.equals(other.value) && role.equals(other.role);
+    }
+
     public String toString() {
         String s = "";
 
@@ -126,5 +139,22 @@ public class Resource extends Base {
         s += ":" + value;
 
         return s;
+    }
+
+    public static List<Resource> parse(String s) {
+        // cpus:0.5;ports:10..20,30..40;mem:1024
+        List<Resource> resources = new ArrayList<>();
+
+        for (String r : s.split(";")) {
+            r = r.trim();
+            if (!r.isEmpty())
+                resources.add(new Resource(r));
+        }
+
+        return resources;
+    }
+
+    public static String format(List<Resource> resources) {
+        return Strings.join(resources, ";");
     }
 }

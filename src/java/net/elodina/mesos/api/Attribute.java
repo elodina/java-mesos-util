@@ -1,6 +1,10 @@
 package net.elodina.mesos.api;
 
 import com.google.protobuf.GeneratedMessage;
+import net.elodina.mesos.util.Strings;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class Attribute extends Base {
     private String name;
@@ -110,4 +114,21 @@ public class Attribute extends Base {
     }
 
     public String toString() { return name + "=" + value; }
+
+    public static List<Attribute> parse(String s) {
+        // a=1;b=2;c=3
+        List<Attribute> attributes = new ArrayList<>();
+
+        for (String t : s.split(";")) {
+            t = t.trim();
+            if (!t.isEmpty())
+                attributes.add(new Attribute(t));
+        }
+
+        return attributes;
+    }
+
+    public static String format(List<Attribute> attributes) {
+        return Strings.join(attributes, ";");
+    }
 }

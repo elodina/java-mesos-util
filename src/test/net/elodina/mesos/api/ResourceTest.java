@@ -46,7 +46,7 @@ public class ResourceTest {
         org.apache.mesos.Protos.Resource message = resource.proto0();
 
         Resource read = new Resource().proto0(message);
-        assertEquals("" + resource, "" + read);
+        assertEquals(resource, read);
     }
 
     @Test
@@ -55,6 +55,6 @@ public class ResourceTest {
         org.apache.mesos.v1.Protos.Resource message = resource.proto1();
 
         Resource read = new Resource().proto1(message);
-        assertEquals("" + resource, "" + read);
+        assertEquals(resource, read);
     }
 }

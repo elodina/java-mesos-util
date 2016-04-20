@@ -1,17 +1,18 @@
 package net.elodina.mesos.api;
 
 import com.google.protobuf.GeneratedMessage;
+import net.elodina.mesos.util.Strings;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class Offer extends Base {
     private String id;
     private String frameworkId;
     private String slaveId;
     private String hostname;
+
+    public Offer() { }
+    public Offer(String expr) { parse(expr); }
 
     private List<Resource> resources = new ArrayList<>();
     private List<Attribute> attributes = new ArrayList<>();
@@ -43,7 +44,7 @@ public class Offer extends Base {
         org.apache.mesos.Protos.Offer.Builder builder = org.apache.mesos.Protos.Offer.newBuilder();
         builder.setId(org.apache.mesos.Protos.OfferID.newBuilder().setValue(id));
         builder.setFrameworkId(org.apache.mesos.Protos.FrameworkID.newBuilder().setValue(frameworkId));
-        builder.setSlaveId(org.apache.mesos.Protos.SlaveID.newBuilder().setValue(frameworkId));
+        builder.setSlaveId(org.apache.mesos.Protos.SlaveID.newBuilder().setValue(slaveId));
         builder.setHostname(hostname);
 
         List<org.apache.mesos.Protos.Resource> r = new ArrayList<>();
@@ -82,7 +83,7 @@ public class Offer extends Base {
         org.apache.mesos.v1.Protos.Offer.Builder builder = org.apache.mesos.v1.Protos.Offer.newBuilder();
         builder.setId(org.apache.mesos.v1.Protos.OfferID.newBuilder().setValue(id));
         builder.setFrameworkId(org.apache.mesos.v1.Protos.FrameworkID.newBuilder().setValue(frameworkId));
-        builder.setAgentId(org.apache.mesos.v1.Protos.AgentID.newBuilder().setValue(frameworkId));
+        builder.setAgentId(org.apache.mesos.v1.Protos.AgentID.newBuilder().setValue(slaveId));
         builder.setHostname(hostname);
 
         List<org.apache.mesos.v1.Protos.Resource> r = new ArrayList<>();
@@ -97,7 +98,7 @@ public class Offer extends Base {
     }
 
     @Override
-    public Base proto1(GeneratedMessage message) {
+    public Offer proto1(GeneratedMessage message) {
         org.apache.mesos.v1.Protos.Offer offer = (org.apache.mesos.v1.Protos.Offer) message;
 
         id = offer.getId().getValue();
@@ -114,5 +115,62 @@ public class Offer extends Base {
             attributes.add(new Attribute().proto1(attribute));
 
         return this;
+    }
+
+    public Offer parse(String s) {
+        List<String> parts = new ArrayList<>();
+
+        StringBuilder buffer = new StringBuilder();
+        boolean inExpr = false;
+        for (char c : s.toCharArray()) {
+            if (c == ',' && !inExpr) {
+                parts.add("" + buffer);
+                buffer.setLength(0);
+            } else {
+                if (c == '[') inExpr = true;
+                else if (c == ']') inExpr = false;
+                buffer.append(c);
+            }
+        }
+        if (inExpr) throw new IllegalArgumentException(s);
+        if (buffer.length() > 0) parts.add("" + buffer);
+
+        Map<String, String> values = new HashMap<>();
+        for (String part : parts) {
+            int colon = part.indexOf(":");
+            if (colon == -1) throw new IllegalArgumentException(s);
+
+            String name = part.substring(0, colon).trim();
+            String value = part.substring(colon + 1).trim();
+            values.put(name, value);
+        }
+
+        id = values.get("id");
+        frameworkId = values.get("frameworkId");
+        slaveId = values.get("slaveId");
+        hostname = values.get("hostname");
+
+        String resValue = values.get("resources");
+        if (resValue != null) resources = Resource.parse(resValue.substring(1, resValue.length() - 1));
+
+        String attrsValue = values.get("attributes");
+        if (attrsValue != null) attributes = Attribute.parse(attrsValue.substring(1, attrsValue.length() - 1));
+
+        return this;
+    }
+
+    @Override
+    public String toString() {
+        List<String> s = new ArrayList<>();
+
+        if (id != null) s.add("id:" + id);
+        if (frameworkId != null) s.add("frameworkId:" + frameworkId);
+        if (slaveId != null) s.add("slaveId:" + slaveId);
+        if (hostname != null) s.add("hostname:" + hostname);
+
+        if (!resources.isEmpty()) s.add("resources:[" + Resource.format(resources) + "]");
+        if (!attributes.isEmpty()) s.add("attributes:[" + Attribute.format(attributes) + "]");
+
+        return Strings.join(s, ", ");
     }
 }

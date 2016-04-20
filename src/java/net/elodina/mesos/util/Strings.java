@@ -32,6 +32,8 @@ public class Strings {
         return new String(chars);
     }
 
+    public static String join(Iterable<?> objects) { return join(objects, ","); }
+
     public static String join(Iterable<?> objects, String separator) {
         String result = "";
 
