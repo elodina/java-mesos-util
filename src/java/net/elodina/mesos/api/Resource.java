@@ -1,48 +1,44 @@
 package net.elodina.mesos.api;
 
 import com.google.protobuf.GeneratedMessage;
-import net.elodina.mesos.util.Range;
-import net.elodina.mesos.util.Strings;
-
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 public class Resource extends Base {
     private String name;
-    private Type type;
-
-    private Double value;
-    private List<Range> ranges;
-
+    private Value value;
     private String role = "*";
 
     public Resource() {}
-    public Resource(String name, Type type) {
+    public Resource(String name, Value value) {
         this.name = name;
-        this.type = type;
+        this.value = value;
     }
 
-    public Resource(String expr) { parse(expr); }
+    public Resource(String s) {
+        // cpus(kafka):0.5
+        // mem:1024
+        // ports:0..100,110..200
+
+        int colon = s.indexOf(":");
+        if (colon == -1) throw new IllegalArgumentException(s);
+
+        String name = s.substring(0, colon);
+        String value = s.substring(colon + 1);
+
+        int bracket = name.indexOf("(");
+        if (bracket != -1) {
+            role = name.substring(bracket + 1, name.length() - 1);
+            name = name.substring(0, bracket);
+        }
+
+        this.name = name;
+        this.value = new Value(value);
+    }
 
     public String name() { return name; }
     public Resource name(String name) { this.name = name; return this; }
 
-
-    public Type type() { return type; }
-    public Resource type(Type type) { this.type = type; return this; }
-
-    public Double value() { return value; }
-    public Resource value(Double value) { this.value = value; return this; }
-
-    public double doubleValue() { return value != null ? value : 0; }
-    public int intValue() { return value != null ? value.intValue() : 0; }
-    public long longValue() { return value != null ? value.longValue() : 0; }
-
-    public List<Range> ranges() { return ranges != null ? Collections.unmodifiableList(ranges) : null; }
-    public Resource ranges(List<Range> ranges) { this.ranges = ranges != null ? new ArrayList<>(ranges) : null; return this; }
-
+    public Value value() { return value; }
+    public Resource value(Value value) { this.value = value; return this; }
 
     public String role() { return role; }
     public Resource role(String role) { this.role = role; return this; }
@@ -52,9 +48,17 @@ public class Resource extends Base {
         org.apache.mesos.Protos.Resource.Builder builder = org.apache.mesos.Protos.Resource.newBuilder();
         builder.setName(name);
 
-        builder.setType(org.apache.mesos.Protos.Value.Type.valueOf(type.name()));
-        if (value != null) builder.setScalar(org.apache.mesos.Protos.Value.Scalar.newBuilder().setValue(value));
-        if (ranges != null) builder.setRanges(ranges0(ranges));
+        builder.setType(org.apache.mesos.Protos.Value.Type.valueOf(value.type().name()));
+        switch (value.type()) {
+            case SCALAR:
+                builder.setScalar(org.apache.mesos.Protos.Value.Scalar.newBuilder().setValue(value.asDouble()));
+                break;
+            case RANGES:
+                builder.setRanges(ranges0(value.asRanges()));
+                break;
+            default:
+                throw new IllegalStateException("unsupported type " + value.type());
+        }
 
         builder.setRole(role);
         return builder.build();
@@ -63,12 +67,14 @@ public class Resource extends Base {
     @Override
     public Resource proto0(GeneratedMessage message) {
         org.apache.mesos.Protos.Resource resource = (org.apache.mesos.Protos.Resource) message;
-
         name = resource.getName();
-        type = Type.valueOf(resource.getType().name());
 
+        Value.Type type = Value.Type.valueOf(resource.getType().name());
+        Object value = null;
         if (resource.hasScalar()) value = resource.getScalar().getValue();
-        if (resource.hasRanges()) ranges = ranges0(resource.getRanges());
+        if (resource.hasRanges()) value = ranges0(resource.getRanges());
+        if (value == null) throw new IllegalStateException("no value");
+        this.value = new Value(type, value);
 
         role = resource.getRole();
         return this;
@@ -79,9 +85,17 @@ public class Resource extends Base {
         org.apache.mesos.v1.Protos.Resource.Builder builder = org.apache.mesos.v1.Protos.Resource.newBuilder();
         builder.setName(name);
 
-        builder.setType(org.apache.mesos.v1.Protos.Value.Type.valueOf(type.name()));
-        if (value != null) builder.setScalar(org.apache.mesos.v1.Protos.Value.Scalar.newBuilder().setValue(value));
-        if (ranges != null) builder.setRanges(ranges1(ranges));
+        builder.setType(org.apache.mesos.v1.Protos.Value.Type.valueOf(value.type().name()));
+        switch (value.type()) {
+            case SCALAR:
+                builder.setScalar(org.apache.mesos.v1.Protos.Value.Scalar.newBuilder().setValue(value.asDouble()));
+                break;
+            case RANGES:
+                builder.setRanges(ranges1(value.asRanges()));
+                break;
+            default:
+                throw new IllegalStateException("unsupported type " + value.type());
+        }
 
         builder.setRole(role);
         return builder.build();
@@ -90,75 +104,27 @@ public class Resource extends Base {
     @Override
     public Resource proto1(GeneratedMessage message) {
         org.apache.mesos.v1.Protos.Resource resource = (org.apache.mesos.v1.Protos.Resource) message;
-
         name = resource.getName();
-        type = Type.valueOf(resource.getType().name());
 
+        Value.Type type = Value.Type.valueOf(resource.getType().name());
+        Object value = null;
         if (resource.hasScalar()) value = resource.getScalar().getValue();
-        if (resource.hasRanges()) ranges = ranges1(resource.getRanges());
+        if (resource.hasRanges()) value = ranges1(resource.getRanges());
+        if (value == null) throw new IllegalStateException("no value");
+        this.value = new Value(type, value);
 
         role = resource.getRole();
         return this;
     }
 
-    public Resource parse(String expr) {
-        // cpus:0.5
-        // mem:1024
-        // disk:73390
-        // ports:0..100,110..200
-
-        int colon = expr.indexOf(":");
-        if (colon == -1) throw new IllegalArgumentException(expr);
-
-        String name = expr.substring(0, colon);
-        String value = expr.substring(colon + 1);
-
-        int bracket = name.indexOf("(");
-        if (bracket != -1) {
-            role = name.substring(bracket + 1, name.length() - 1);
-            name = name.substring(0, bracket);
-        }
-
-        this.name = name;
-        switch (name) {
-            case "cpus":case "mem":case "disk":
-                type = Type.SCALAR;
-                this.value = Double.parseDouble(value);
-                break;
-            case "ports":
-                type = Type.RANGES;
-                ranges = new ArrayList<>();
-                for (String part : value.split(",")) ranges.add(new Range(part));
-                break;
-            default:
-                throw new IllegalArgumentException(expr);
-        }
-
-        return this;
-    }
-
-    public String format() {
-        // see parse
+    @Override
+    public String toString() {
         String s = "";
 
         s += name;
         if (!role.equals("*")) s += "(" + role + ")";
-        s += ":";
-
-        switch (type) {
-            case SCALAR:
-                s += new DecimalFormat("#.###").format(value);
-                break;
-            case RANGES:
-                s += Strings.join(ranges, ",");
-                break;
-            default:
-                throw new IllegalStateException("" + type);
-        }
+        s += ":" + value;
 
         return s;
     }
-
-    @Override
-    public String toString() { return format(); }
 }

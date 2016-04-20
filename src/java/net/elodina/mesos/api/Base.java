@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class Base {
-    public abstract GeneratedMessage proto0();
+    public abstract Object proto0();
     public abstract Base proto0(GeneratedMessage message);
 
     public abstract GeneratedMessage proto1();

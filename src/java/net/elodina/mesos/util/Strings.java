@@ -18,6 +18,7 @@
 
 package net.elodina.mesos.util;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -116,5 +117,55 @@ public class Strings {
         }
 
         return result;
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public static boolean isInteger(String s) {
+        try {
+            Integer.parseInt(s);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public static boolean isLong(String s) {
+        try {
+            Long.parseLong(s);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public static boolean isFloat(String s) {
+        try {
+            Float.parseFloat(s);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public static boolean isDouble(String s) {
+        try {
+            Double.parseDouble(s);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public static boolean isBigDecimal(String s) {
+        try {
+            new BigDecimal(s);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 }
