@@ -42,9 +42,13 @@ public abstract class Scheduler {
         private Scheduler scheduler;
         private MesosSchedulerDriver driver;
 
-        public TcpV0Driver(Scheduler scheduler, Framework framework, String master) {
+        public TcpV0Driver(Scheduler scheduler, Framework framework, String master) { this(scheduler, framework, master, null); }
+
+        public TcpV0Driver(Scheduler scheduler, Framework framework, String master, Cred cred) {
             this.scheduler = scheduler;
-            driver = new MesosSchedulerDriver(new TcpV0Scheduler(), framework.proto0(), master);
+
+            if (cred != null) driver = new MesosSchedulerDriver(new TcpV0Scheduler(), framework.proto0(), master, cred.proto0());
+            else driver = new MesosSchedulerDriver(new TcpV0Scheduler(), framework.proto0(), master);
         }
 
         @Override
