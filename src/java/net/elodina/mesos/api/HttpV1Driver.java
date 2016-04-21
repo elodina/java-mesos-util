@@ -24,7 +24,12 @@ public class HttpV1Driver extends Scheduler.Driver {
     }
 
     @Override
-    public void run() {
+    public boolean run() {
+        return true;
+    }
+
+    @Override
+    public void stop() {
         // todo
     }
 }

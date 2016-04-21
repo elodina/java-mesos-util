@@ -27,6 +27,8 @@ public abstract class Scheduler {
 
         public abstract void killTask(String id);
 
-        public abstract void run();
+        public abstract boolean run();
+
+        public abstract void stop();
     }
 }

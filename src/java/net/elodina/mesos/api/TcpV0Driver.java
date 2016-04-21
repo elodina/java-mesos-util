@@ -12,7 +12,7 @@ public class TcpV0Driver extends Scheduler.Driver {
     private Scheduler scheduler;
     private MesosSchedulerDriver driver;
 
-    public TcpV0Driver(Framework framework, Scheduler scheduler, String master) {
+    public TcpV0Driver(Scheduler scheduler, Framework framework, String master) {
         this.scheduler = scheduler;
         driver = new MesosSchedulerDriver(new TcpV0Scheduler(), framework.proto0(), master);
     }
@@ -50,8 +50,13 @@ public class TcpV0Driver extends Scheduler.Driver {
     }
 
     @Override
-    public void run() {
-        driver.run();
+    public boolean run() {
+        return driver.run() == Protos.Status.DRIVER_STOPPED;
+    }
+
+    @Override
+    public void stop() {
+        driver.stop();
     }
 
     private class TcpV0Scheduler implements org.apache.mesos.Scheduler {
