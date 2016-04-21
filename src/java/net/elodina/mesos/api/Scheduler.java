@@ -27,14 +27,6 @@ public abstract class Scheduler {
 
         public abstract void killTask(String id);
 
-        public static Object getInstance(int type) {
-            switch (type) {
-                case TCP_V0: return new TcpV0Driver();
-                case HTTP_V1: return new HttpV1Driver();
-                default: throw new IllegalArgumentException("" + type);
-            }
-        }
-
         public abstract void run();
     }
 }

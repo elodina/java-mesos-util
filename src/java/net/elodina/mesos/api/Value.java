@@ -36,7 +36,7 @@ public class Value {
     public String asText() { return type == Type.TEXT ? (String)value : ""; }
 
     @SuppressWarnings("unchecked")
-    public List<Range> asRanges() { return type == Type.RANGES ? (List<Range>)value : Collections.<Range>emptyList(); }
+    public List<Range> asRanges() { return type == Type.RANGES ? Collections.unmodifiableList((List<Range>)value) : Collections.<Range>emptyList(); }
 
     public int hashCode() { return 31 * type.hashCode() + value.hashCode(); }
 

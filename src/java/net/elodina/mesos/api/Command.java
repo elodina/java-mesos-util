@@ -17,6 +17,9 @@ public class Command extends Base {
     public Command uris(URI... uris) { return uris(Arrays.asList(uris)); }
     public Command uris(List<URI> uris) { this.uris.clear(); this.uris.addAll(uris); return this; }
 
+    public Command addUri(URI uri) { uris.add(uri); return this; }
+    public Command removeUri(URI uri) { uris.remove(uri); return this; }
+
     public Map<String, String> env() { return Collections.unmodifiableMap(env); }
     public Command env(Map<String, String> env) { this.env.clear(); this.env.putAll(env); return this; }
 

@@ -354,7 +354,7 @@ public class Task extends Base {
 
             builder.setExecutorId(org.apache.mesos.Protos.ExecutorID.newBuilder().setValue(id));
             if (name != null) builder.setName(name);
-            builder.setFrameworkId(org.apache.mesos.Protos.FrameworkID.newBuilder().setValue(frameworkId));
+            if (frameworkId != null) builder.setFrameworkId(org.apache.mesos.Protos.FrameworkID.newBuilder().setValue(frameworkId));
 
             if (command != null) builder.setCommand(command.proto0());
             if (data != null) builder.setData(ByteString.copyFrom(data));
@@ -368,7 +368,7 @@ public class Task extends Base {
 
             id = executor.getExecutorId().getValue();
             if (executor.hasName()) name = executor.getName();
-            frameworkId = executor.getFrameworkId().getValue();
+            if (executor.hasFrameworkId()) frameworkId = executor.getFrameworkId().getValue();
 
             if (executor.hasCommand()) command = new Command().proto0(executor.getCommand());
             if (executor.hasData()) data = executor.getData().toByteArray();
@@ -382,7 +382,7 @@ public class Task extends Base {
 
             builder.setExecutorId(org.apache.mesos.v1.Protos.ExecutorID.newBuilder().setValue(id));
             if (name != null) builder.setName(name);
-            builder.setFrameworkId(org.apache.mesos.v1.Protos.FrameworkID.newBuilder().setValue(frameworkId));
+            if (frameworkId != null) builder.setFrameworkId(org.apache.mesos.v1.Protos.FrameworkID.newBuilder().setValue(frameworkId));
 
             if (command != null) builder.setCommand(command.proto1());
             if (data != null) builder.setData(ByteString.copyFrom(data));
@@ -396,7 +396,7 @@ public class Task extends Base {
 
             id = executor.getExecutorId().getValue();
             if (executor.hasName()) name = executor.getName();
-            frameworkId = executor.getFrameworkId().getValue();
+            if (executor.hasFrameworkId()) frameworkId = executor.getFrameworkId().getValue();
 
             if (executor.hasCommand()) command = new Command().proto1(executor.getCommand());
             if (executor.hasData()) data = executor.getData().toByteArray();
