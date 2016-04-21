@@ -6,6 +6,7 @@ import org.junit.Test;
 import java.util.Arrays;
 
 import static net.elodina.mesos.api.Task.Executor;
+import static net.elodina.mesos.api.Task.Status;
 import static org.junit.Assert.*;
 
 public class TaskTest {
@@ -50,6 +51,44 @@ public class TaskTest {
 
         Task read = new Task().proto1(message);
         assertEquals("" + task, "" + read);
+    }
+
+    @Test
+    public void Status_init_parse() {
+        Status status = new Status("id:id, state:running, message:message, slaveId:slaveId, executorId:executorId");
+        assertEquals("id", status.id());
+        assertEquals(Task.State.RUNNING, status.state());
+
+        assertEquals("message", status.message());
+        assertEquals(null, status.data());
+
+        assertEquals("slaveId", status.slaveId());
+        assertEquals("executorId", status.executorId());
+    }
+
+    @Test
+    public void Status_toString() {
+        assertEquals("", "" + new Status(""));
+        assertEquals("id:1", "" + new Status("id:1"));
+        assertEquals("id:1, state:running, executorId:2", "" + new Status("id:1, state:running, executorId:2"));
+    }
+
+    @Test
+    public void Status_proto0() {
+        Status status = new Status("id:1, state:starting, executorId:2, message:123, data:00");
+        org.apache.mesos.Protos.TaskStatus message = status.proto0();
+
+        Status read = new Status().proto0(message);
+        assertEquals("" + status, "" + read);
+    }
+
+    @Test
+    public void Status_proto1() {
+        Status status = new Status("id:1, state:starting, executorId:2, message:123, data:00");
+        org.apache.mesos.v1.Protos.TaskStatus message = status.proto1();
+
+        Status read = new Status().proto1(message);
+        assertEquals("" + status, "" + read);
     }
 
     @Test

@@ -179,6 +179,148 @@ public class Task extends Base {
         return Strings.join(s, ", ");
     }
 
+    public static class Status extends Base {
+        private String id;
+        private State state;
+
+        private String message;
+        private byte[] data;
+
+        private String slaveId;
+        private String executorId;
+
+
+        public Status() {}
+        public Status(String s) {
+            Map<String, String> values = Strings.parseMap(s, ',', ':');
+            id = values.get("id");
+            if (values.containsKey("state")) state = State.valueOf(values.get("state").toUpperCase());
+
+            message = values.get("message");
+            if (values.containsKey("data")) data = Strings.parseHex(values.get("data"));
+
+            slaveId = values.get("slaveId");
+            executorId = values.get("executorId");
+        }
+
+
+        public String id() { return id; }
+        public Status id(String id) { this.id = id; return this; }
+
+        public State state() { return state; }
+        public Status state(State state) { this.state = state; return this; }
+
+
+        public String message() { return message; }
+        public Status message(String message) { this.message = message; return this; }
+
+        public byte[] data() { return data; }
+        public Status data(byte[] data) { this.data = data; return this; }
+
+
+        public String slaveId() { return slaveId; }
+        public Status slaveId(String slaveId) { this.slaveId = slaveId; return this; }
+
+        public String executorId() { return executorId; }
+        public Status executorId(String executorId) { this.executorId = executorId; return this; }
+
+
+        @Override
+        public org.apache.mesos.Protos.TaskStatus proto0() {
+            org.apache.mesos.Protos.TaskStatus.Builder builder = org.apache.mesos.Protos.TaskStatus.newBuilder();
+
+            builder.setTaskId(org.apache.mesos.Protos.TaskID.newBuilder().setValue(id));
+            if (state != null) builder.setState(org.apache.mesos.Protos.TaskState.valueOf("TASK_" + state.name()));
+
+            if (message != null) builder.setMessage(message);
+            if (data != null) builder.setData(ByteString.copyFrom(data));
+
+            if (slaveId != null) builder.setSlaveId(org.apache.mesos.Protos.SlaveID.newBuilder().setValue(slaveId));
+            if (executorId != null) builder.setExecutorId(org.apache.mesos.Protos.ExecutorID.newBuilder().setValue(executorId));
+
+            return builder.build();
+        }
+
+        @Override
+        public Status proto0(GeneratedMessage message) {
+            org.apache.mesos.Protos.TaskStatus status = (org.apache.mesos.Protos.TaskStatus) message;
+
+            id = status.getTaskId().getValue();
+            state = State.valueOf(status.getState().name().substring("TASK_".length()));
+
+            if (status.hasMessage()) this.message = status.getMessage();
+            if (status.hasData()) data = status.getData().toByteArray();
+
+            if (status.hasSlaveId()) slaveId = status.getSlaveId().getValue();
+            if (status.hasExecutorId()) executorId = status.getExecutorId().getValue();
+
+            return this;
+        }
+
+        @Override
+        public org.apache.mesos.v1.Protos.TaskStatus proto1() {
+            org.apache.mesos.v1.Protos.TaskStatus.Builder builder = org.apache.mesos.v1.Protos.TaskStatus.newBuilder();
+
+            builder.setTaskId(org.apache.mesos.v1.Protos.TaskID.newBuilder().setValue(id));
+            if (state != null) builder.setState(org.apache.mesos.v1.Protos.TaskState.valueOf("TASK_" + state.name()));
+
+            if (message != null) builder.setMessage(message);
+            if (data != null) builder.setData(ByteString.copyFrom(data));
+
+            if (slaveId != null) builder.setAgentId(org.apache.mesos.v1.Protos.AgentID.newBuilder().setValue(slaveId));
+            if (executorId != null) builder.setExecutorId(org.apache.mesos.v1.Protos.ExecutorID.newBuilder().setValue(executorId));
+
+            return builder.build();
+        }
+
+        @Override
+        public Status proto1(GeneratedMessage message) {
+            org.apache.mesos.v1.Protos.TaskStatus status = (org.apache.mesos.v1.Protos.TaskStatus) message;
+
+            id = status.getTaskId().getValue();
+            state = State.valueOf(status.getState().name().substring("TASK_".length()));
+
+            if (status.hasMessage()) this.message = status.getMessage();
+            if (status.hasData()) data = status.getData().toByteArray();
+
+            if (status.hasAgentId()) slaveId = status.getAgentId().getValue();
+            if (status.hasExecutorId()) executorId = status.getExecutorId().getValue();
+
+            return this;
+        }
+
+        public String toString() {
+            String s = "";
+
+            if (id != null) s += "id:" + id;
+            if (state != null) s += ", state:" + state.name().toLowerCase();
+
+            if (message != null) s += ", message:" + message;
+            if (data != null) s += ", data:" + Strings.formatHex(data);
+
+            if (slaveId != null) s += ", slaveId:" + slaveId;
+            if (executorId != null) s += ", executorId:" + executorId;
+
+            return s.startsWith(", ") ? s.substring(2) : s;
+        }
+    }
+
+    public static enum State {
+        STAGING,  // Initial state. Framework status updates should not use.
+        STARTING, // The task is being launched by the executor.
+        RUNNING,
+
+        // NOTE: This should only be sent when the framework has
+        // the TASK_KILLING_STATE capability.
+        KILLING,  // The task is being killed by the executor.
+
+        FINISHED, // TERMINAL: The task finished successfully.
+        FAILED,   // TERMINAL: The task failed to finish successfully.
+        KILLED,   // TERMINAL: The task was killed by the executor.
+        LOST,     // TERMINAL: The task failed but can be rescheduled.
+        ERROR,    // TERMINAL: The task description contains an error.
+    }
+
     public static class Executor extends Base {
         private String id;
         private String name;
