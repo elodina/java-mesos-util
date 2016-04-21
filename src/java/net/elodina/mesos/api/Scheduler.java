@@ -22,9 +22,6 @@ public abstract class Scheduler {
     public abstract void disconnected();
 
     public static abstract class Driver {
-        public static final int TCP_V0 = 0;
-        public static final int HTTP_V1 = 1;
-
         public abstract void declineOffer(String id);
 
         public abstract void launchTask(String offerId, Task task);
