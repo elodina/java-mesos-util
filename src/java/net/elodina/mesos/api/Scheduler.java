@@ -9,9 +9,19 @@ public abstract class Scheduler {
 
     public abstract void offers(List<Offer> offers);
 
-    public abstract void taskStatus(Task.Status status);
+    public abstract void status(Task.Status status);
 
-    public class Driver {
+    public abstract void message(String executorId, String slaveId, byte[] data);
 
+    public abstract void disconnected();
+
+    public abstract class Driver {
+        public abstract void declineOffer(String id);
+
+        public abstract void launchTask(String offerId, Task task);
+
+        public abstract void reconcileTasks(List<String> ids);
+
+        public abstract void killTask(String id);
     }
 }
