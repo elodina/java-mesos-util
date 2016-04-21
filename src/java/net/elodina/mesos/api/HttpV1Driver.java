@@ -24,7 +24,7 @@ public class HttpV1Driver extends Scheduler.Driver {
     }
 
     @Override
-    public void run(Framework framework, Scheduler scheduler) {
+    public void run() {
         // todo
     }
 }

@@ -35,6 +35,6 @@ public abstract class Scheduler {
             }
         }
 
-        public abstract void run(Framework framework, Scheduler scheduler);
+        public abstract void run();
     }
 }
