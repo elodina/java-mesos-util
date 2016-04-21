@@ -15,7 +15,10 @@ public abstract class Scheduler {
 
     public abstract void disconnected();
 
-    public abstract class Driver {
+    public static abstract class Driver {
+        public static final int TCP_V0 = 0;
+        public static final int HTTP_V1 = 1;
+
         public abstract void declineOffer(String id);
 
         public abstract void launchTask(String offerId, Task task);
@@ -23,5 +26,15 @@ public abstract class Scheduler {
         public abstract void reconcileTasks(List<String> ids);
 
         public abstract void killTask(String id);
+
+        public static Object getInstance(int type) {
+            switch (type) {
+                case TCP_V0: return new TcpV0Driver();
+                case HTTP_V1: return new HttpV1Driver();
+                default: throw new IllegalArgumentException("" + type);
+            }
+        }
+
+        public abstract void run(Framework framework, Scheduler scheduler);
     }
 }
