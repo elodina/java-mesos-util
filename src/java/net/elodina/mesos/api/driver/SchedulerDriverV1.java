@@ -1,7 +1,11 @@
-package net.elodina.mesos.api;
+package net.elodina.mesos.api.driver;
 
 import com.google.protobuf.ExtensionRegistry;
 import com.googlecode.protobuf.format.JsonFormat;
+import net.elodina.mesos.api.Framework;
+import net.elodina.mesos.api.Offer;
+import net.elodina.mesos.api.Scheduler;
+import net.elodina.mesos.api.Task;
 import net.elodina.mesos.util.Request;
 import org.apache.mesos.v1.Protos;
 
@@ -17,7 +21,7 @@ import java.util.List;
 import static org.apache.mesos.v1.scheduler.Protos.Call;
 import static org.apache.mesos.v1.scheduler.Protos.Event;
 
-public class SchedulerDriverV1 extends Scheduler.Driver {
+public class SchedulerDriverV1 extends SchedulerDriver {
     private Scheduler scheduler;
     private Framework framework;
     private String masterUrl;
@@ -48,13 +52,13 @@ public class SchedulerDriverV1 extends Scheduler.Driver {
             .setType(Protos.Offer.Operation.Type.LAUNCH)
             .setLaunch(Protos.Offer.Operation.Launch.newBuilder().addTaskInfos(task.proto1()));
 
-        Call.Accept.Builder accept = Call.Accept.newBuilder();
-        accept.addOfferIds(Protos.OfferID.newBuilder().setValue(offerId));
-        accept.addOperations(operation);
+        Call.Accept.Builder accept = Call.Accept.newBuilder()
+            .addOfferIds(Protos.OfferID.newBuilder().setValue(offerId))
+            .addOperations(operation);
 
         Call call = Call.newBuilder()
             .setFrameworkId(Protos.FrameworkID.newBuilder().setValue(framework.id()))
-            .setType(Call.Type.DECLINE)
+            .setType(Call.Type.ACCEPT)
             .setAccept(accept)
             .build();
 
@@ -104,9 +108,9 @@ public class SchedulerDriverV1 extends Scheduler.Driver {
                 .body(("" + body).getBytes("utf-8"));
 
             Request.Response response = request.send();
-            debug("Response: " + response.code() + " - " + response.message());
+            debug("Response: " + response.code() + " - " + response.message() + (response.body() != null ? ": " + new String(response.body()) : ""));
             if (response.code() != 202)
-                throw new IllegalStateException("Response: " + response.code() + " - " + response.message());
+                throw new IllegalStateException("Response: " + response.code() + " - " + response.message() + (response.body() != null ? ": " + new String(response.body()) : ""));
 
         } catch (IOException e) {
             throw new IOError(e);

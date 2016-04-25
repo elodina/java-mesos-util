@@ -130,7 +130,7 @@ public class RequestTest {
         HttpHandler handler = new HttpHandler() {
             @Override
             public void response(HttpExchange exchange) throws IOException {
-                exchange.sendResponseHeaders(code.get(), 0);
+            exchange.sendResponseHeaders(code.get(), 5); exchange.getResponseBody().write("error".getBytes());
             }
         };
 
@@ -146,6 +146,7 @@ public class RequestTest {
             code.set(500);
             response = new Request(server.getUrl() + "/").send();
             assertEquals(500, response.code());
+            assertEquals("error", new String(response.body()));
             assertEquals("Internal Server Error", response.message());
         }
     }

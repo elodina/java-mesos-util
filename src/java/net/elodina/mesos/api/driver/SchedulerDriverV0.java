@@ -1,5 +1,6 @@
-package net.elodina.mesos.api;
+package net.elodina.mesos.api.driver;
 
+import net.elodina.mesos.api.*;
 import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.SchedulerDriver;
@@ -8,7 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class SchedulerDriverV0 extends Scheduler.Driver {
+public class SchedulerDriverV0 extends net.elodina.mesos.api.driver.SchedulerDriver {
     private Scheduler scheduler;
     private MesosSchedulerDriver driver;
 

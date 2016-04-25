@@ -167,7 +167,10 @@ public class Request {
 
             try { IO.copyAndClose(c.getInputStream(), bytes); }
             catch (FileNotFoundException ignore) {}
-            catch (IOException e) { if (!e.getMessage().contains("Server returned HTTP response code:")) throw e; }
+            catch (IOException e) {
+                if (!e.getMessage().contains("Server returned HTTP response code:")) throw e;
+                IO.copyAndClose(c.getErrorStream(), bytes);
+            }
 
             Response response = new Response()
                 .code(c.getResponseCode())
