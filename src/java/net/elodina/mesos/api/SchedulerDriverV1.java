@@ -29,30 +29,84 @@ public class SchedulerDriverV1 extends Scheduler.Driver {
     }
 
     @Override
-    public void declineOffer(String id) { sendCall(declineCall(id)); }
+    public void declineOffer(String id) {
+        Call.Decline.Builder decline = Call.Decline.newBuilder();
+        decline.addOfferIds(Protos.OfferID.newBuilder().setValue(id));
+
+        Call call = Call.newBuilder()
+            .setFrameworkId(Protos.FrameworkID.newBuilder().setValue(framework.id()))
+            .setType(Call.Type.DECLINE)
+            .setDecline(decline)
+            .build();
+
+        sendCall(call);
+    }
 
     @Override
-    public void launchTask(String offerId, Task task) { sendCall(launchTaskCall(offerId, task)); }
+    public void launchTask(String offerId, Task task) {
+        Protos.Offer.Operation.Builder operation = Protos.Offer.Operation.newBuilder()
+            .setType(Protos.Offer.Operation.Type.LAUNCH)
+            .setLaunch(Protos.Offer.Operation.Launch.newBuilder().addTaskInfos(task.proto1()));
+
+        Call.Accept.Builder accept = Call.Accept.newBuilder();
+        accept.addOfferIds(Protos.OfferID.newBuilder().setValue(offerId));
+        accept.addOperations(operation);
+
+        Call call = Call.newBuilder()
+            .setFrameworkId(Protos.FrameworkID.newBuilder().setValue(framework.id()))
+            .setType(Call.Type.DECLINE)
+            .setAccept(accept)
+            .build();
+
+        sendCall(call);
+    }
 
     @Override
-    public void reconcileTasks(List<String> ids) { sendCall(reconcileTasksCall(ids)); }
+    public void reconcileTasks(List<String> ids) {
+        Call.Reconcile.Builder reconcile = Call.Reconcile.newBuilder();
+
+        for (String id : ids)
+            reconcile.addTasks(Call.Reconcile.Task.newBuilder().setTaskId(Protos.TaskID.newBuilder().setValue(id)));
+
+        Call call = Call.newBuilder()
+            .setFrameworkId(Protos.FrameworkID.newBuilder().setValue(framework.id()))
+            .setType(Call.Type.RECONCILE)
+            .setReconcile(reconcile)
+            .build();
+
+        sendCall(call);
+    }
 
     @Override
-    public void killTask(String id) { sendCall(killTaskCall(id)); }
+    public void killTask(String id) {
+        Call.Kill.Builder kill = Call.Kill.newBuilder();
+        kill.setTaskId(Protos.TaskID.newBuilder().setValue(id));
+
+        Call call = Call.newBuilder()
+            .setFrameworkId(Protos.FrameworkID.newBuilder().setValue(framework.id()))
+            .setType(Call.Type.KILL)
+            .setKill(kill)
+            .build();
+
+        sendCall(call);
+    }
 
     private void sendCall(Call call) {
         try {
             StringWriter body = new StringWriter();
             new JsonFormat().print(call, body);
+            debug("Call:" + body);
 
-            Request.Response response = new Request(apiUrl())
+            Request request = new Request(apiUrl())
                 .method(Request.Method.POST)
-                .contentType("application/json; charset=utf-8")
-                .body(("" + body).getBytes("utf-8"))
-                .send();
+                .contentType("application/json")
+                .accept("application/json")
+                .body(("" + body).getBytes("utf-8"));
 
+            Request.Response response = request.send();
+            debug("Response: " + response.code() + " - " + response.message());
             if (response.code() != 202)
-                throw new IllegalStateException("Response code: " + response.code());
+                throw new IllegalStateException("Response: " + response.code() + " - " + response.message());
 
         } catch (IOException e) {
             throw new IOError(e);
@@ -73,6 +127,7 @@ public class SchedulerDriverV1 extends Scheduler.Driver {
             StringWriter request = new StringWriter();
             new JsonFormat().print(subscribeCall(), request);
             c.getOutputStream().write(request.toString().getBytes("utf-8"));
+            debug("Subscribe: " + request);
 
             InputStream stream = c.getInputStream();
             for (;;) {
@@ -83,6 +138,7 @@ public class SchedulerDriverV1 extends Scheduler.Driver {
                 Event.Builder event = Event.newBuilder();
                 new JsonFormat().merge(response, ExtensionRegistry.getEmptyRegistry(), event);
 
+                debug("Event: " + response);
                 onEvent(event.build());
             }
         } finally {
@@ -153,61 +209,12 @@ public class SchedulerDriverV1 extends Scheduler.Driver {
         return call.build();
     }
 
-    private Call declineCall(String offerId) {
-        Call.Decline.Builder decline = Call.Decline.newBuilder();
-        decline.addOfferIds(Protos.OfferID.newBuilder().setValue(offerId));
-
-        return Call.newBuilder()
-            .setDecline(decline)
-            .setType(Call.Type.DECLINE)
-            .build();
-    }
-
-    private Call launchTaskCall(String offerId, Task task) {
-        Protos.Offer.Operation.Builder operation = Protos.Offer.Operation.newBuilder()
-            .setType(Protos.Offer.Operation.Type.LAUNCH)
-            .setLaunch(Protos.Offer.Operation.Launch.newBuilder().addTaskInfos(task.proto1()));
-
-        Call.Accept.Builder accept = Call.Accept.newBuilder();
-        accept.addOfferIds(Protos.OfferID.newBuilder().setValue(offerId));
-        accept.addOperations(operation);
-
-        return Call.newBuilder()
-            .setType(Call.Type.DECLINE)
-            .setAccept(accept)
-            .build();
-    }
-
-    private Call killTaskCall(String id) {
-        Call.Kill.Builder kill = Call.Kill.newBuilder();
-        kill.setTaskId(Protos.TaskID.newBuilder().setValue(id));
-
-        return Call.newBuilder()
-            .setKill(kill)
-            .setType(Call.Type.KILL)
-            .build();
-    }
-
-    private Call reconcileTasksCall(List<String> ids) {
-        Call.Reconcile.Builder reconcile = Call.Reconcile.newBuilder();
-
-        for (String id : ids)
-            reconcile.addTasks(Call.Reconcile.Task.newBuilder().setTaskId(Protos.TaskID.newBuilder().setValue(id)));
-
-        return Call.newBuilder()
-            .setReconcile(reconcile)
-            .setType(Call.Type.RECONCILE)
-            .build();
-    }
-
-    private Call tearDownCall() {
-        return Call.newBuilder()
-            .setType(Call.Type.TEARDOWN)
-            .build();
-    }
-
     @Override
     public void stop() {
-        sendCall(tearDownCall());
+        Call call = Call.newBuilder()
+            .setType(Call.Type.TEARDOWN)
+            .build();
+
+        sendCall(call);
     }
 }

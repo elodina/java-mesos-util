@@ -70,7 +70,10 @@ public class Request {
 
 
     public String contentType() { return header("Content-Type"); }
-    public Request contentType(String contentType) { header("Content-Type", contentType); return this; }
+    public Request contentType(String contentType) { return header("Content-Type", contentType); }
+
+    public String accept() { return header("Accept"); }
+    public Request accept(String accept) { return header("Accept", accept); }
 
     public String encoding() { return encoding(contentType()); }
 
