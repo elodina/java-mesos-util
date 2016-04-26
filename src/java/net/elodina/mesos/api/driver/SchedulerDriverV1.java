@@ -178,7 +178,7 @@ public class SchedulerDriverV1 extends SchedulerDriver {
             case SUBSCRIBED:
                 Event.Subscribed subscribed = event.getSubscribed();
                 framework.id(subscribed.getFrameworkId().getValue());
-                scheduler.registered(this, subscribed.getFrameworkId().getValue(), null);
+                scheduler.subscribed(this, subscribed.getFrameworkId().getValue(), null);
                 break;
             case OFFERS:
                 List<Offer> offers = new ArrayList<>();

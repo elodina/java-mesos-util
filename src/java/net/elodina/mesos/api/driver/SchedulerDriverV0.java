@@ -11,12 +11,14 @@ import java.util.List;
 
 public class SchedulerDriverV0 extends net.elodina.mesos.api.driver.SchedulerDriver {
     private Scheduler scheduler;
+    private Framework framework;
     private MesosSchedulerDriver driver;
 
     public SchedulerDriverV0(Scheduler scheduler, Framework framework, String master) { this(scheduler, framework, master, null); }
 
     public SchedulerDriverV0(Scheduler scheduler, Framework framework, String master, Cred cred) {
         this.scheduler = scheduler;
+        this.framework = framework;
 
         if (cred != null) driver = new MesosSchedulerDriver(new TcpV0Scheduler(), framework.proto0(), master, cred.proto0());
         else driver = new MesosSchedulerDriver(new TcpV0Scheduler(), framework.proto0(), master);
@@ -67,12 +69,13 @@ public class SchedulerDriverV0 extends net.elodina.mesos.api.driver.SchedulerDri
     private class TcpV0Scheduler implements org.apache.mesos.Scheduler {
         @Override
         public void registered(SchedulerDriver driver, Protos.FrameworkID frameworkId, Protos.MasterInfo masterInfo) {
-            scheduler.registered(SchedulerDriverV0.this, frameworkId.getValue(), new Master().proto0(masterInfo));
+            framework.id(framework.id());
+            scheduler.subscribed(SchedulerDriverV0.this, frameworkId.getValue(), new Master().proto0(masterInfo));
         }
 
         @Override
         public void reregistered(SchedulerDriver driver, Protos.MasterInfo masterInfo) {
-            scheduler.reregistered(SchedulerDriverV0.this, new Master().proto0(masterInfo));
+            scheduler.subscribed(SchedulerDriverV0.this, framework.id(), new Master().proto0(masterInfo));
         }
 
         @Override

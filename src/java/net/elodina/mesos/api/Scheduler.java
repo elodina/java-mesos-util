@@ -5,9 +5,7 @@ import net.elodina.mesos.api.driver.SchedulerDriver;
 import java.util.List;
 
 public abstract class Scheduler {
-    public abstract void registered(SchedulerDriver driver, String id, Master master);
-
-    public abstract void reregistered(SchedulerDriver driver, Master master);
+    public abstract void subscribed(SchedulerDriver driver, String id, Master master);
 
     public abstract void offers(List<Offer> offers);
 
