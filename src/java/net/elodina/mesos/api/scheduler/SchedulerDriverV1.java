@@ -1,10 +1,9 @@
-package net.elodina.mesos.api.driver;
+package net.elodina.mesos.api.scheduler;
 
 import com.google.protobuf.ExtensionRegistry;
 import com.googlecode.protobuf.format.JsonFormat;
 import net.elodina.mesos.api.Framework;
 import net.elodina.mesos.api.Offer;
-import net.elodina.mesos.api.Scheduler;
 import net.elodina.mesos.api.Task;
 import net.elodina.mesos.util.Request;
 import org.apache.mesos.v1.Protos;

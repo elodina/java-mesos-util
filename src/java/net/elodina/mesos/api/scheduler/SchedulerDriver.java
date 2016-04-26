@@ -1,4 +1,4 @@
-package net.elodina.mesos.api.driver;
+package net.elodina.mesos.api.scheduler;
 
 import net.elodina.mesos.api.Task;
 
