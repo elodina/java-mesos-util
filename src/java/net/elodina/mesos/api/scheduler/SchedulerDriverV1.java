@@ -187,6 +187,7 @@ public class SchedulerDriverV1 extends SchedulerDriver {
             case UPDATE:
                 Protos.TaskStatus status = event.getUpdate().getStatus();
                 scheduler.status(new Task.Status().proto1(status));
+                sendCall(acknowledgeCall(status));
                 break;
             case MESSAGE:
                 Event.Message message = event.getMessage();
@@ -208,6 +209,22 @@ public class SchedulerDriverV1 extends SchedulerDriver {
         Call.Builder call = Call.newBuilder();
         call.setSubscribe(subscribe);
         call.setType(Call.Type.SUBSCRIBE);
+        if (framework.hasId()) call.setFrameworkId(framework.getId());
+
+        return call.build();
+    }
+
+    private Call acknowledgeCall(Protos.TaskStatus status) {
+        Protos.FrameworkInfo framework = this.framework.proto1();
+
+        Call.Acknowledge.Builder acknowledge = Call.Acknowledge.newBuilder()
+            .setAgentId(status.getAgentId())
+            .setTaskId(status.getTaskId())
+            .setUuid(status.getUuid());
+
+        Call.Builder call = Call.newBuilder();
+        call.setAcknowledge(acknowledge);
+        call.setType(Call.Type.ACKNOWLEDGE);
         if (framework.hasId()) call.setFrameworkId(framework.getId());
 
         return call.build();

@@ -12,6 +12,9 @@ import java.util.List;
 public class SchedulerDriverV0 extends net.elodina.mesos.api.scheduler.SchedulerDriver {
     private Scheduler scheduler;
     private Framework framework;
+    private String master;
+    private Cred cred;
+
     private MesosSchedulerDriver driver;
 
     public SchedulerDriverV0(Scheduler scheduler, Framework framework, String master) { this(scheduler, framework, master, null); }
@@ -19,6 +22,8 @@ public class SchedulerDriverV0 extends net.elodina.mesos.api.scheduler.Scheduler
     public SchedulerDriverV0(Scheduler scheduler, Framework framework, String master, Cred cred) {
         this.scheduler = scheduler;
         this.framework = framework;
+        this.master = master;
+        this.cred = cred;
 
         if (cred != null) driver = new MesosSchedulerDriver(new TcpV0Scheduler(), framework.proto0(), master, cred.proto0());
         else driver = new MesosSchedulerDriver(new TcpV0Scheduler(), framework.proto0(), master);
