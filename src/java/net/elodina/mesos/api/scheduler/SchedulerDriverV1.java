@@ -150,7 +150,13 @@ public class SchedulerDriverV1 extends SchedulerDriver {
     }
 
     private String apiUrl() {
-        return masterUrl + (masterUrl.endsWith("/") ? "" : "/") + "api/v1/scheduler";
+        String url = masterUrl;
+
+        if (!url.startsWith("http://")) url = "http://" + url;
+        if (!url.endsWith("/")) url += "/";
+        url += "api/v1/scheduler";
+
+        return url;
     }
 
     private int readChunkSize(InputStream stream) throws IOException {
