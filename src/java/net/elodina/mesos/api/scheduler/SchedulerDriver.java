@@ -2,17 +2,21 @@ package net.elodina.mesos.api.scheduler;
 
 import net.elodina.mesos.api.Task;
 
-import java.io.PrintWriter;
+import java.io.IOError;
+import java.io.IOException;
+import java.io.Writer;
 import java.util.List;
 
 public abstract class SchedulerDriver {
-    private PrintWriter debug;
+    private Writer debug;
 
-    public PrintWriter getDebug() { return debug; }
-    public void setDebug(PrintWriter debug) { this.debug = debug; }
+    public Writer getDebug() { return debug; }
+    public void setDebug(Writer debug) { this.debug = debug; }
 
     public void debug(String message) {
-        if (debug != null) debug.println(message);
+        if (debug != null)
+            try { debug.write(message + System.lineSeparator()); }
+            catch (IOException e) { throw new IOError(e); }
     }
 
     public abstract void declineOffer(String id);

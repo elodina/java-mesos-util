@@ -98,7 +98,7 @@ public class SchedulerDriverV1 extends SchedulerDriver {
         try {
             StringWriter body = new StringWriter();
             new JsonFormat().print(call, body);
-            debug("Call:" + body);
+            debug("[call] " + body);
 
             Request request = new Request(apiUrl())
                 .method(Request.Method.POST)
@@ -107,7 +107,7 @@ public class SchedulerDriverV1 extends SchedulerDriver {
                 .body(("" + body).getBytes("utf-8"));
 
             Request.Response response = request.send();
-            debug("Response: " + response.code() + " - " + response.message() + (response.body() != null ? ": " + new String(response.body()) : ""));
+            debug("[response] " + response.code() + " - " + response.message() + (response.body() != null ? ": " + new String(response.body()) : ""));
             if (response.code() != 202)
                 throw new IllegalStateException("Response: " + response.code() + " - " + response.message() + (response.body() != null ? ": " + new String(response.body()) : ""));
 
@@ -130,7 +130,7 @@ public class SchedulerDriverV1 extends SchedulerDriver {
             StringWriter request = new StringWriter();
             new JsonFormat().print(subscribeCall(), request);
             c.getOutputStream().write(request.toString().getBytes("utf-8"));
-            debug("Subscribe: " + request);
+            debug("[subscribe] " + request);
 
             InputStream stream = c.getInputStream();
             for (;;) {
@@ -141,7 +141,7 @@ public class SchedulerDriverV1 extends SchedulerDriver {
                 Event.Builder event = Event.newBuilder();
                 new JsonFormat().merge(response, ExtensionRegistry.getEmptyRegistry(), event);
 
-                debug("Event: " + response);
+                debug("[event] " + response);
                 onEvent(event.build());
             }
         } finally {
