@@ -9,7 +9,6 @@ import net.elodina.mesos.util.Period;
 import net.elodina.mesos.util.Request;
 import org.apache.mesos.v1.Protos;
 
-import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
@@ -26,6 +25,7 @@ public class SchedulerDriverV1 extends SchedulerDriver {
 
     private Period reconnectDelay = new Period("5s");
     private volatile boolean stopped;
+    private volatile boolean subscribed;
 
     public SchedulerDriverV1(Scheduler scheduler, Framework framework, String masterUrl) {
         this.scheduler = scheduler;
@@ -115,10 +115,10 @@ public class SchedulerDriverV1 extends SchedulerDriver {
             Request.Response response = request.send();
             debug("[response] " + response.code() + " - " + response.message() + (response.body() != null ? ": " + new String(response.body()) : ""));
             if (response.code() != 202)
-                throw new IllegalStateException("Response: " + response.code() + " - " + response.message() + (response.body() != null ? ": " + new String(response.body()) : ""));
+                throw new ApiException("Response: " + response.code() + " - " + response.message() + (response.body() != null ? ": " + new String(response.body()) : ""));
 
         } catch (IOException e) {
-            throw new IOError(e);
+            throw new ApiException(e);
         }
     }
 
@@ -129,7 +129,12 @@ public class SchedulerDriverV1 extends SchedulerDriver {
         while (!stopped) {
             try {
                 run0();
-            } catch (IOException e) {
+            } catch (IOException | ApiException e) {
+                if (e instanceof ApiException && ((ApiException)e).isUnrecoverable()) {
+                    debug(e + ", stopping");
+                    return false;
+                }
+
                 debug(e + ", reconnecting after " + reconnectDelay);
 
                 try { Thread.sleep(reconnectDelay.ms()); }
@@ -141,6 +146,8 @@ public class SchedulerDriverV1 extends SchedulerDriver {
     }
 
     private void run0() throws IOException {
+        subscribed = false;
+
         try (Request request = new Request(apiUrl())) {
             request.method(Request.Method.POST)
                 .contentType("application/json")
@@ -200,6 +207,7 @@ public class SchedulerDriverV1 extends SchedulerDriver {
     private void onEvent(Event event) throws IOException {
         switch (event.getType()) {
             case SUBSCRIBED:
+                subscribed = true;
                 Event.Subscribed subscribed = event.getSubscribed();
                 framework.id(subscribed.getFrameworkId().getValue());
                 scheduler.subscribed(this, subscribed.getFrameworkId().getValue(), null);
@@ -220,12 +228,16 @@ public class SchedulerDriverV1 extends SchedulerDriver {
                 break;
             case ERROR:
                 Event.Error error = event.getError();
-                throw new IOException(error.getMessage());
+                throw new ApiException(error.getMessage(), isUnrecoverable(error));
             case RESCIND: case FAILURE: case HEARTBEAT:
                 break; // ignore
             default:
                 throw new UnsupportedOperationException("Unsupported event: " + event);
         }
+    }
+
+    private boolean isUnrecoverable(Event.Error error) {
+        return !this.subscribed && error.getMessage().equals("Framework has been removed");
     }
 
     private Call subscribeCall() {
@@ -269,5 +281,28 @@ public class SchedulerDriverV1 extends SchedulerDriver {
 
         sendCall(call.build());
         stopped = true;
+        subscribed = false;
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    private static class ApiException extends RuntimeException {
+        private boolean unrecoverable;
+
+        private ApiException(String message) { this(message, null, false); }
+
+        private ApiException(String message, boolean unrecoverable) { this(message, null, unrecoverable); }
+
+        private ApiException(Throwable cause) { this(null, cause); }
+
+        private ApiException(Throwable cause, boolean unrecoverable) { this(null, cause, unrecoverable); }
+
+        private ApiException(String message, Throwable cause) { this(message, cause, false); }
+
+        private ApiException(String message, Throwable cause, boolean unrecoverable) {
+            super(message, cause);
+            this.unrecoverable = unrecoverable;
+        }
+
+        public boolean isUnrecoverable() { return unrecoverable; }
     }
 }
