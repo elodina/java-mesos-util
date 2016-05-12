@@ -4,9 +4,7 @@ import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import org.junit.Test;
 
-import java.io.ByteArrayOutputStream;
-import java.io.Closeable;
-import java.io.IOException;
+import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.charset.Charset;
@@ -120,6 +118,28 @@ public class RequestTest {
 
             assertEquals(Arrays.asList("1", "2"), aValues);
             assertEquals("3", response.header("B"));
+        }
+    }
+
+    @Test
+    public void send_keepOpen() throws IOException {
+        HttpHandler handler = new HttpHandler() {
+            @Override
+            public void response(HttpExchange exchange) throws IOException {
+                byte[] data = "123\n".getBytes();
+                exchange.sendResponseHeaders(200, data.length);
+                exchange.getResponseBody().write(data);
+            }
+        };
+
+        try(HttpServer server = new HttpServer(handler); Request request = new Request(server.getUrl() + "/")) {
+            Request.Response response = request
+                .contentType("text/plain")
+                .send(true);
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(response.stream()));
+            String line = reader.readLine();
+            assertEquals("123", line);
         }
     }
 

@@ -8,7 +8,7 @@ import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.util.*;
 
-public class Request {
+public class Request implements AutoCloseable, Closeable {
     private String uri;
     private Method method = Method.GET;
     private Values headers = new Values();
@@ -17,6 +17,7 @@ public class Request {
     private byte[] body;
 
     private boolean followRedirects;
+    private HttpURLConnection connection;
 
     public Request() {}
 
@@ -136,7 +137,18 @@ public class Request {
         return this;
     }
 
-    public Response send() throws IOException {
+    public boolean isOpen() { return connection != null; }
+
+    public void close() {
+        if (connection != null) {
+            connection.disconnect();
+            connection = null;
+        }
+    }
+
+    public Response send() throws IOException { return send(false); }
+
+    public Response send(boolean keepOpen) throws IOException {
         String uri = this.uri;
 
         String query = query();
@@ -152,36 +164,20 @@ public class Request {
                 for (String value : values) c.addRequestProperty(name, value);
             }
 
-            if (method == Method.POST && query != null) {
-                byte[] bytes = query.getBytes("latin1");
-                c.setDoOutput(true);
-                c.setRequestProperty("Content-Length", "" + bytes.length);
-                c.getOutputStream().write(bytes);
-            } else if (body != null) {
+            byte[] body = null;
+            if (method == Method.POST && query != null) body = query.getBytes("latin1");
+            else if (this.body != null) body = this.body;
+
+            if (body != null) {
                 c.setDoOutput(true);
                 c.setRequestProperty("Content-Length", "" + body.length);
                 c.getOutputStream().write(body);
             }
 
-            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-
-            try { IO.copyAndClose(c.getInputStream(), bytes); }
-            catch (FileNotFoundException ignore) {}
-            catch (IOException e) {
-                if (!e.getMessage().contains("Server returned HTTP response code:")) throw e;
-                IO.copyAndClose(c.getErrorStream(), bytes);
-            }
-
-            Response response = new Response()
-                .code(c.getResponseCode())
-                .message(c.getResponseMessage());
-
-            response.headers().setAll(c.getHeaderFields());
-            response.body(bytes.size() > 0 ? bytes.toByteArray() : null);
-
-            return response;
+            return new Response(c, keepOpen);
         } finally {
-            c.disconnect();
+            if (keepOpen) connection = c;
+            else c.disconnect();
         }
     }
 
@@ -262,13 +258,37 @@ public class Request {
 
     }
 
-    public static class Response {
+    public static class Response implements Closeable, AutoCloseable {
         private int code;
         private String message;
 
         private Values headers = new Values();
 
         private byte[] body;
+
+        private HttpURLConnection connection;
+
+        public Response() {}
+
+        public Response(HttpURLConnection c, boolean keepOpen) throws IOException {
+            if (!keepOpen) {
+                ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+
+                try { IO.copyAndClose(c.getInputStream(), bytes); }
+                catch (FileNotFoundException ignore) {}
+                catch (IOException e) {
+                    if (!e.getMessage().contains("Server returned HTTP response code:")) throw e;
+                    IO.copyAndClose(c.getErrorStream(), bytes);
+                }
+                this.body(bytes.size() > 0 ? bytes.toByteArray() : null);
+            } else
+                this.connection = c;
+
+            this.code(c.getResponseCode())
+                .message(c.getResponseMessage());
+
+            this.headers().setAll(c.getHeaderFields());
+        }
 
         public int code() { return code; }
         public Response code(int code) { this.code = code; return this; }
@@ -295,5 +315,17 @@ public class Request {
 
 
         public String text() { return body != null ? new String(body, Charset.forName(encoding())) : null; }
+
+
+        public boolean isOpen() { return connection != null; }
+
+        public void close() {
+            if (connection != null) {
+                connection.disconnect();
+                connection = null;
+            }
+        }
+
+        public InputStream stream() throws IOException { return connection.getInputStream(); }
     }
 }

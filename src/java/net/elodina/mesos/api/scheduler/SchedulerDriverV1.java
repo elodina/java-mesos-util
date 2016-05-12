@@ -12,8 +12,6 @@ import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -120,32 +118,28 @@ public class SchedulerDriverV1 extends SchedulerDriver {
     public boolean run() throws IOException {
         String url = apiUrl();
 
-        HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
-        try {
-            c.setRequestMethod("POST");
-            c.setRequestProperty("Content-Type", "application/json");
-            c.setRequestProperty("Accept", "application/json");
-            c.setDoOutput(true);
+        try (Request request = new Request(url)) {
+            request.method(Request.Method.POST)
+                .contentType("application/json")
+                .accept("application/json");
 
-            StringWriter request = new StringWriter();
-            new JsonFormat().print(subscribeCall(), request);
-            c.getOutputStream().write(request.toString().getBytes("utf-8"));
-            debug("[subscribe] " + request);
+            StringWriter requestJson = new StringWriter();
+            new JsonFormat().print(subscribeCall(), requestJson);
+            request.body(requestJson.toString().getBytes("utf-8"));
+            debug("[subscribe] " + requestJson);
 
-            InputStream stream = c.getInputStream();
+            InputStream stream = request.send(true).stream();
             for (;;) {
                 int size = readChunkSize(stream);
                 byte[] buffer = readChunk(stream, size);
 
-                String response = new String(buffer).replaceAll("\\\\/", "/");
+                String responseJson = new String(buffer).replaceAll("\\\\/", "/");
                 Event.Builder event = Event.newBuilder();
-                new JsonFormat().merge(response, ExtensionRegistry.getEmptyRegistry(), event);
+                new JsonFormat().merge(responseJson, ExtensionRegistry.getEmptyRegistry(), event);
 
-                debug("[event] " + response);
+                debug("[event] " + responseJson);
                 onEvent(event.build());
             }
-        } finally {
-            c.disconnect();
         }
     }
 
