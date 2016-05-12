@@ -130,7 +130,7 @@ public class SchedulerDriverV1 extends SchedulerDriver {
             try {
                 run0();
             } catch (IOException e) {
-                debug("Exception:" + e + ", reconnecting after " + reconnectDelay);
+                debug(e + ", reconnecting after " + reconnectDelay);
 
                 try { Thread.sleep(reconnectDelay.ms()); }
                 catch (InterruptedException ie) { break; }
@@ -197,7 +197,7 @@ public class SchedulerDriverV1 extends SchedulerDriver {
         return buffer;
     }
 
-    private void onEvent(Event event) {
+    private void onEvent(Event event) throws IOException {
         switch (event.getType()) {
             case SUBSCRIBED:
                 Event.Subscribed subscribed = event.getSubscribed();
@@ -218,7 +218,10 @@ public class SchedulerDriverV1 extends SchedulerDriver {
                 Event.Message message = event.getMessage();
                 scheduler.message(message.getExecutorId().getValue(), message.getAgentId().getValue(), message.getData().toByteArray());
                 break;
-            case RESCIND: case FAILURE: case ERROR: case HEARTBEAT:
+            case ERROR:
+                Event.Error error = event.getError();
+                throw new IOException(error.getMessage());
+            case RESCIND: case FAILURE: case HEARTBEAT:
                 break; // ignore
             default:
                 throw new UnsupportedOperationException("Unsupported event: " + event);
