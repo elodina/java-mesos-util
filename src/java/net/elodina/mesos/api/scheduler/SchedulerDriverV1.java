@@ -5,6 +5,7 @@ import com.googlecode.protobuf.format.JsonFormat;
 import net.elodina.mesos.api.Framework;
 import net.elodina.mesos.api.Offer;
 import net.elodina.mesos.api.Task;
+import net.elodina.mesos.util.Period;
 import net.elodina.mesos.util.Request;
 import org.apache.mesos.v1.Protos;
 
@@ -23,11 +24,18 @@ public class SchedulerDriverV1 extends SchedulerDriver {
     private Framework framework;
     private String masterUrl;
 
+    private Period reconnectDelay = new Period("5s");
+    private volatile boolean stopped;
+
     public SchedulerDriverV1(Scheduler scheduler, Framework framework, String masterUrl) {
         this.scheduler = scheduler;
         this.framework = framework;
         this.masterUrl = masterUrl;
     }
+
+    public Period getReconnectDelay() { return reconnectDelay; }
+    public void setReconnectDelay(Period reconnectDelay) { this.reconnectDelay = reconnectDelay; }
+
 
     @Override
     public void declineOffer(String id) {
@@ -116,9 +124,24 @@ public class SchedulerDriverV1 extends SchedulerDriver {
 
     @Override
     public boolean run() throws IOException {
-        String url = apiUrl();
+        stopped = false;
 
-        try (Request request = new Request(url)) {
+        while (!stopped) {
+            try {
+                run0();
+            } catch (IOException e) {
+                debug("Exception:" + e + ", reconnecting after " + reconnectDelay);
+
+                try { Thread.sleep(reconnectDelay.ms()); }
+                catch (InterruptedException ie) { break; }
+            }
+        }
+
+        return true;
+    }
+
+    private void run0() throws IOException {
+        try (Request request = new Request(apiUrl())) {
             request.method(Request.Method.POST)
                 .contentType("application/json")
                 .accept("application/json");
@@ -129,7 +152,7 @@ public class SchedulerDriverV1 extends SchedulerDriver {
             debug("[subscribe] " + requestJson);
 
             InputStream stream = request.send(true).stream();
-            for (;;) {
+            while (!stopped) {
                 int size = readChunkSize(stream);
                 byte[] buffer = readChunk(stream, size);
 
@@ -140,6 +163,8 @@ public class SchedulerDriverV1 extends SchedulerDriver {
                 debug("[event] " + responseJson);
                 onEvent(event.build());
             }
+
+            stream.close();
         }
     }
 
@@ -232,10 +257,14 @@ public class SchedulerDriverV1 extends SchedulerDriver {
 
     @Override
     public void stop() {
-        Call call = Call.newBuilder()
-            .setType(Call.Type.TEARDOWN)
-            .build();
+        Protos.FrameworkInfo framework = this.framework.proto1();
 
-        sendCall(call);
+        Call.Builder call = Call.newBuilder()
+            .setType(Call.Type.TEARDOWN);
+
+        if (framework.hasId()) call.setFrameworkId(framework.getId());
+
+        sendCall(call.build());
+        stopped = true;
     }
 }
