@@ -160,12 +160,12 @@ public class Offer extends Base {
     }
 
     @Override
-    public String toString() {
+    public String toString(boolean _short) {
         List<String> s = new ArrayList<>();
 
-        if (id != null) s.add("id:" + id);
-        if (frameworkId != null) s.add("frameworkId:" + frameworkId);
-        if (slaveId != null) s.add("slaveId:" + slaveId);
+        if (id != null) s.add("id:" + shortId(id, _short));
+        if (frameworkId != null && !_short) s.add("frameworkId:" + frameworkId);
+        if (slaveId != null) s.add("slaveId:" + shortId(slaveId, _short));
         if (hostname != null) s.add("hostname:" + hostname);
 
         if (!resources.isEmpty()) s.add("resources:[" + Resource.format(resources) + "]");

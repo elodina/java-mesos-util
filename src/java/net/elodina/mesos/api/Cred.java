@@ -77,7 +77,7 @@ public class Cred extends Base {
         return principal.equals(other.principal) && secret.equals(other.secret);
     }
 
-    public String toString() {
+    public String toString(boolean _short) {
         return principal + ":" + secret;
     }
 }

@@ -128,10 +128,10 @@ public class Framework extends Base {
     }
 
     @Override
-    public String toString() {
+    public String toString(boolean _short) {
         String s = "";
 
-        if (id != null) s += "id:" + id;
+        if (id != null) s += "id:" + shortId(id, _short);
         if (name != null) s += ", name:" + name;
 
         if (user != null) s += ", user:" + user;

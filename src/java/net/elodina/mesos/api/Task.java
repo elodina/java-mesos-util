@@ -164,12 +164,12 @@ public class Task extends Base {
     }
 
     @Override
-    public String toString() {
+    public String toString(boolean _short) {
         List<String> s = new ArrayList<>();
 
-        if (id != null) s.add("id:" + id);
+        if (id != null) s.add("id:" + shortId(id, _short));
         if (name != null) s.add("name:" + name);
-        if (slaveId != null) s.add("slaveId:" + slaveId);
+        if (slaveId != null) s.add("slaveId:" + shortId(slaveId, _short));
 
         if (!resources.isEmpty()) s.add("resources:[" + Resource.format(resources) + "]");
         if (executor != null) s.add("executor:[" + executor + "]");
@@ -289,17 +289,17 @@ public class Task extends Base {
             return this;
         }
 
-        public String toString() {
+        public String toString(boolean _short) {
             String s = "";
 
-            if (id != null) s += "id:" + id;
+            if (id != null) s += "id:" + shortId(id, _short);
             if (state != null) s += ", state:" + state.name().toLowerCase();
 
             if (message != null) s += ", message:" + message;
             if (data != null) s += ", data:" + Strings.formatHex(data);
 
-            if (slaveId != null) s += ", slaveId:" + slaveId;
-            if (executorId != null) s += ", executorId:" + executorId;
+            if (slaveId != null) s += ", slaveId:" + shortId(slaveId, _short);
+            if (executorId != null) s += ", executorId:" + shortId(executorId, _short);
 
             return s.startsWith(", ") ? s.substring(2) : s;
         }
@@ -443,12 +443,12 @@ public class Task extends Base {
 
         }
 
-        public String toString() {
+        public String toString(boolean _short) {
             List<String> s = new ArrayList<>();
 
-            if (id != null) s.add("id:" + id);
+            if (id != null) s.add("id:" + shortId(id, _short));
             if (name != null) s.add("name:" + name);
-            if (frameworkId != null) s.add("frameworkId:" + frameworkId);
+            if (frameworkId != null) s.add("frameworkId:" + shortId(frameworkId, _short));
 
             if (command != null) s.add("command:[" + command + "]");
             if (data != null) s.add("data:" + Strings.formatHex(data));

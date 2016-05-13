@@ -127,9 +127,9 @@ public class Master extends Base {
     }
 
     @Override
-    public String toString() {
+    public String toString(boolean _short) {
         String s = "";
-        s += "id:" + id;
+        if (id != null) s += "id:" + shortId(id, _short);
 
         if (ip != null) s += ", ip:" + ip;
         if (port != -1) s += ", port:" + port;

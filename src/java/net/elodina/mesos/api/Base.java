@@ -13,6 +13,14 @@ public abstract class Base {
     public abstract GeneratedMessage proto1();
     public abstract Base proto1(GeneratedMessage message);
 
+    public abstract String toString(boolean _short);
+    public final String toString() { return toString(false); }
+
+    public static String shortId(String id) { return id != null ? "#" + suffix(id, 5) : null; }
+    public static String shortId(String id, boolean _short) { return _short ? shortId(id) : id; }
+
+    static String suffix(String s, int maxLen) { return s.length() <= maxLen ? s : s.substring(s.length() - maxLen); }
+
     static org.apache.mesos.Protos.Value.Ranges ranges0(List<Range> ranges) {
         List<org.apache.mesos.Protos.Value.Range> result = new ArrayList<>();
         for (Range range : ranges)

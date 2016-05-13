@@ -113,7 +113,7 @@ public class Attribute extends Base {
         return name.equals(other.name) && value.equals(other.value);
     }
 
-    public String toString() { return name + "=" + value; }
+    public String toString(boolean _short) { return name + "=" + value; }
 
     public static List<Attribute> parse(String s) {
         // a=1;b=2;c=3

@@ -131,7 +131,7 @@ public class Resource extends Base {
         return name.equals(other.name) && value.equals(other.value) && role.equals(other.role);
     }
 
-    public String toString() {
+    public String toString(boolean _short) {
         String s = "";
 
         s += name;

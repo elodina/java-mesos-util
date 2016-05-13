@@ -141,7 +141,7 @@ public class Command extends Base {
         if (envVal != null) env = Strings.parseMap(envVal.substring(1, envVal.length() - 1));
     }
 
-    public String toString() {
+    public String toString(boolean _short) {
         String s = "";
 
         s += value;
@@ -240,7 +240,7 @@ public class Command extends Base {
             return value.equals(other.value) && extract == other.extract;
         }
 
-        public String toString() {
+        public String toString(boolean _short) {
             String s = "";
 
             s += value;
