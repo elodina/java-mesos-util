@@ -25,7 +25,9 @@ public class SchedulerDriverV1 extends SchedulerDriver {
 
     private Period reconnectDelay = new Period("5s");
     private volatile boolean stopped;
+
     private volatile boolean subscribed;
+    private volatile String streamId;
 
     public SchedulerDriverV1(Scheduler scheduler, Framework framework, String masterUrl) {
         this.scheduler = scheduler;
@@ -112,6 +114,9 @@ public class SchedulerDriverV1 extends SchedulerDriver {
                 .accept("application/json")
                 .body(("" + body).getBytes("utf-8"));
 
+            if (streamId != null) // Mesos 0.25 has no streamId
+                request.header("Mesos-Stream-Id", streamId);
+
             Request.Response response = request.send();
             debug("[response] " + response.code() + " - " + response.message() + (response.body() != null ? ": " + new String(response.body()) : ""));
             if (response.code() != 202)
@@ -147,6 +152,7 @@ public class SchedulerDriverV1 extends SchedulerDriver {
 
     private void run0() throws IOException {
         subscribed = false;
+        streamId = null;
 
         try (Request request = new Request(apiUrl())) {
             request.method(Request.Method.POST)
@@ -158,7 +164,13 @@ public class SchedulerDriverV1 extends SchedulerDriver {
             request.body(requestJson.toString().getBytes("utf-8"));
             debug("[subscribe] " + requestJson);
 
-            InputStream stream = request.send(true).stream();
+            Request.Response response = request.send(true);
+            if (response.code() != 200)
+                throw new ApiException("Response: " + response.code() + " - " + response.message() + (response.body() != null ? ": " + new String(response.body()) : ""));
+
+            streamId = response.header("Mesos-Stream-Id");
+
+            InputStream stream = response.stream();
             while (!stopped) {
                 int size = readChunkSize(stream);
                 byte[] buffer = readChunk(stream, size);
@@ -282,6 +294,7 @@ public class SchedulerDriverV1 extends SchedulerDriver {
         sendCall(call.build());
         stopped = true;
         subscribed = false;
+        streamId = null;
     }
 
     @SuppressWarnings("UnusedDeclaration")
