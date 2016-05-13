@@ -6,7 +6,7 @@ import net.elodina.mesos.util.Strings;
 
 import java.util.*;
 
-public class Task extends Base {
+public class Task extends Message {
     private String id;
     private String name;
     private String slaveId;
@@ -179,7 +179,7 @@ public class Task extends Base {
         return Strings.join(s, ", ");
     }
 
-    public static class Status extends Base {
+    public static class Status extends Message {
         private String id;
         private State state;
 
@@ -321,7 +321,7 @@ public class Task extends Base {
         ERROR,    // TERMINAL: The task description contains an error.
     }
 
-    public static class Executor extends Base {
+    public static class Executor extends Message {
         private String id;
         private String name;
         private String frameworkId;

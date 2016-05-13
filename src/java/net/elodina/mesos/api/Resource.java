@@ -6,7 +6,7 @@ import net.elodina.mesos.util.Strings;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Resource extends Base {
+public class Resource extends Message {
     private String name;
     private Value value;
     private String role = "*";

@@ -6,7 +6,7 @@ import net.elodina.mesos.util.Strings;
 
 import java.util.Map;
 
-public class Framework extends Base {
+public class Framework extends Message {
     private String id;
     private String name;
 

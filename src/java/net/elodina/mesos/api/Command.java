@@ -5,7 +5,7 @@ import net.elodina.mesos.util.Strings;
 
 import java.util.*;
 
-public class Command extends Base {
+public class Command extends Message {
     private String value;
     private List<URI> uris = new ArrayList<>();
     private Map<String, String> env = new LinkedHashMap<>();
@@ -151,7 +151,7 @@ public class Command extends Base {
         return s;
     }
 
-    public static class URI extends Base {
+    public static class URI extends Message {
         private String value;
         private boolean extract = true;
 

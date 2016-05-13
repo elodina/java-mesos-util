@@ -6,7 +6,7 @@ import net.elodina.mesos.util.Version;
 
 import java.util.Map;
 
-public class Master extends Base {
+public class Master extends Message {
     private String id;
 
     private String ip;

@@ -6,7 +6,7 @@ import net.elodina.mesos.util.Strings;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Attribute extends Base {
+public class Attribute extends Message {
     private String name;
     private Value value;
 

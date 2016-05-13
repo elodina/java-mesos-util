@@ -5,7 +5,7 @@ import net.elodina.mesos.util.Strings;
 
 import java.util.*;
 
-public class Offer extends Base {
+public class Offer extends Message {
     private String id;
     private String frameworkId;
     private String slaveId;

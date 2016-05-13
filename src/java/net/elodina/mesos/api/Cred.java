@@ -5,7 +5,7 @@ import com.google.protobuf.GeneratedMessage;
 
 import java.nio.charset.Charset;
 
-public class Cred extends Base {
+public class Cred extends Message {
     private String principal;
     private String secret;
 

@@ -6,12 +6,12 @@ import net.elodina.mesos.util.Range;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class Base {
+public abstract class Message {
     public abstract Object proto0();
-    public abstract Base proto0(GeneratedMessage message);
+    public abstract Message proto0(GeneratedMessage message);
 
     public abstract GeneratedMessage proto1();
-    public abstract Base proto1(GeneratedMessage message);
+    public abstract Message proto1(GeneratedMessage message);
 
     public abstract String toString(boolean _short);
     public final String toString() { return toString(false); }
