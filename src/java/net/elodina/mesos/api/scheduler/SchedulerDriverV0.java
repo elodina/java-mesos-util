@@ -27,8 +27,8 @@ public class SchedulerDriverV0 extends net.elodina.mesos.api.scheduler.Scheduler
 
         if (master.startsWith("http://")) master = master.substring("http://".length());
 
-        if (cred != null) driver = new MesosSchedulerDriver(new TcpV0Scheduler(), framework.proto0(), master, cred.proto0());
-        else driver = new MesosSchedulerDriver(new TcpV0Scheduler(), framework.proto0(), master);
+        if (cred != null) driver = new MesosSchedulerDriver(new SchedulerV0(), framework.proto0(), master, cred.proto0());
+        else driver = new MesosSchedulerDriver(new SchedulerV0(), framework.proto0(), master);
     }
 
     @Override
@@ -99,7 +99,7 @@ public class SchedulerDriverV0 extends net.elodina.mesos.api.scheduler.Scheduler
         return "" + buffer;
     }
 
-    private class TcpV0Scheduler implements org.apache.mesos.Scheduler {
+    private class SchedulerV0 implements org.apache.mesos.Scheduler {
         @Override
         public void registered(SchedulerDriver driver, Protos.FrameworkID frameworkId, Protos.MasterInfo masterInfo) {
             debug("[registered] id:" + json(frameworkId) + ", master:" + json(masterInfo));
