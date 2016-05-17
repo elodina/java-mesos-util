@@ -232,7 +232,7 @@ public class SchedulerDriverV1 extends SchedulerDriver {
             case UPDATE:
                 Protos.TaskStatus status = event.getUpdate().getStatus();
                 scheduler.status(new Task.Status().proto1(status));
-                sendCall(acknowledgeCall(status));
+                if (status.hasUuid()) sendCall(acknowledgeCall(status));
                 break;
             case MESSAGE:
                 Event.Message message = event.getMessage();
