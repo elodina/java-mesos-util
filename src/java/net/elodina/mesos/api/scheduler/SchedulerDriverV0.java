@@ -92,7 +92,7 @@ public class SchedulerDriverV0 extends net.elodina.mesos.api.scheduler.Scheduler
         return s;
     }
 
-    private String json(Message message) {
+    private static String json(Message message) {
         StringBuilder buffer = new StringBuilder();
         try { new JsonFormat().print(message, buffer); }
         catch (IOException e) { throw new IOError(e); }
