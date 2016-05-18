@@ -19,7 +19,7 @@ import java.util.List;
 import static org.apache.mesos.v1.scheduler.Protos.Call;
 import static org.apache.mesos.v1.scheduler.Protos.Event;
 
-public class SchedulerDriverV1 extends SchedulerDriver {
+public class SchedulerDriverV1 implements SchedulerDriver {
     private static final Logger logger = Logger.getLogger(SchedulerDriverV0.class);
 
     private Scheduler scheduler;

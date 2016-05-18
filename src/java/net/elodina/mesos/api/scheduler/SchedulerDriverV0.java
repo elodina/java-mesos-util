@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class SchedulerDriverV0 extends net.elodina.mesos.api.scheduler.SchedulerDriver {
+public class SchedulerDriverV0 implements net.elodina.mesos.api.scheduler.SchedulerDriver {
     private static final Logger logger = Logger.getLogger(SchedulerDriverV0.class);
 
     private Scheduler scheduler;
