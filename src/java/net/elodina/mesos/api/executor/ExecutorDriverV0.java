@@ -37,7 +37,7 @@ public class ExecutorDriverV0 implements ExecutorDriver {
     @Override
     public void sendStatus(Task.Status status) {
         Protos.TaskStatus _status = status.proto0();
-        logger.debug("[sendStatus] " + _status);
+        logger.debug("[sendStatus] " + json(_status));
         driver.sendStatusUpdate(_status);
     }
 

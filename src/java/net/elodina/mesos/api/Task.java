@@ -191,6 +191,12 @@ public class Task extends Message {
 
 
         public Status() {}
+
+        public Status(String id, State state) {
+            this.id = id;
+            this.state = state;
+        }
+
         public Status(String s) {
             Map<String, String> values = Strings.parseMap(s, ',', ':');
             id = values.get("id");
