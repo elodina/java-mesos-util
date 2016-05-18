@@ -7,6 +7,7 @@ import net.elodina.mesos.api.Offer;
 import net.elodina.mesos.api.Task;
 import net.elodina.mesos.util.Period;
 import net.elodina.mesos.util.Request;
+import org.apache.log4j.Logger;
 import org.apache.mesos.v1.Protos;
 
 import java.io.IOException;
@@ -19,6 +20,8 @@ import static org.apache.mesos.v1.scheduler.Protos.Call;
 import static org.apache.mesos.v1.scheduler.Protos.Event;
 
 public class SchedulerDriverV1 extends SchedulerDriver {
+    private static final Logger logger = Logger.getLogger(SchedulerDriverV0.class);
+
     private Scheduler scheduler;
     private Framework framework;
     private String masterUrl;
@@ -106,7 +109,7 @@ public class SchedulerDriverV1 extends SchedulerDriver {
         try {
             StringWriter body = new StringWriter();
             new JsonFormat().print(call, body);
-            debug("[call] " + body);
+            logger.debug("[call] " + body);
 
             Request request = new Request(apiUrl())
                 .method(Request.Method.POST)
@@ -118,7 +121,7 @@ public class SchedulerDriverV1 extends SchedulerDriver {
                 request.header("Mesos-Stream-Id", streamId);
 
             Request.Response response = request.send();
-            debug("[response] " + response.code() + " - " + response.message() + (response.body() != null ? ": " + new String(response.body()) : ""));
+            logger.debug("[response] " + response.code() + " - " + response.message() + (response.body() != null ? ": " + new String(response.body()) : ""));
             if (response.code() != 202)
                 throw new ApiException("Response: " + response.code() + " - " + response.message() + (response.body() != null ? ": " + new String(response.body()) : ""));
 
@@ -136,11 +139,11 @@ public class SchedulerDriverV1 extends SchedulerDriver {
                 run0();
             } catch (IOException | ApiException e) {
                 if (e instanceof ApiException && ((ApiException)e).isUnrecoverable()) {
-                    debug(e + ", stopping");
+                    logger.debug(e + ", stopping");
                     return false;
                 }
 
-                debug(e + ", reconnecting after " + reconnectDelay);
+                logger.debug(e + ", reconnecting after " + reconnectDelay);
 
                 try { Thread.sleep(reconnectDelay.ms()); }
                 catch (InterruptedException ie) { break; }
@@ -162,7 +165,7 @@ public class SchedulerDriverV1 extends SchedulerDriver {
             StringWriter requestJson = new StringWriter();
             new JsonFormat().print(subscribeCall(), requestJson);
             request.body(requestJson.toString().getBytes("utf-8"));
-            debug("[subscribe] " + requestJson);
+            logger.debug("[subscribe] " + requestJson);
 
             Request.Response response = request.send(true);
             if (response.code() != 200)
@@ -179,7 +182,7 @@ public class SchedulerDriverV1 extends SchedulerDriver {
                 Event.Builder event = Event.newBuilder();
                 new JsonFormat().merge(responseJson, ExtensionRegistry.getEmptyRegistry(), event);
 
-                debug("[event] " + responseJson);
+                logger.debug("[event] " + responseJson);
                 onEvent(event.build());
             }
 

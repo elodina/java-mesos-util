@@ -3,6 +3,7 @@ package net.elodina.mesos.api.scheduler;
 import com.google.protobuf.Message;
 import com.googlecode.protobuf.format.JsonFormat;
 import net.elodina.mesos.api.*;
+import org.apache.log4j.Logger;
 import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.SchedulerDriver;
@@ -14,6 +15,8 @@ import java.util.Arrays;
 import java.util.List;
 
 public class SchedulerDriverV0 extends net.elodina.mesos.api.scheduler.SchedulerDriver {
+    private static final Logger logger = Logger.getLogger(SchedulerDriverV0.class);
+
     private Scheduler scheduler;
     private Framework framework;
 
@@ -35,7 +38,7 @@ public class SchedulerDriverV0 extends net.elodina.mesos.api.scheduler.Scheduler
     public void declineOffer(String id) {
         Protos.OfferID offerId = Protos.OfferID.newBuilder().setValue(id).build();
 
-        debug("[declineOffer] " + json(offerId));
+        logger.debug("[declineOffer] " + json(offerId));
         driver.declineOffer(offerId);
     }
 
@@ -44,7 +47,7 @@ public class SchedulerDriverV0 extends net.elodina.mesos.api.scheduler.Scheduler
         Protos.OfferID _offerId = Protos.OfferID.newBuilder().setValue(offerId).build();
         List<Protos.TaskInfo> tasks = Arrays.asList(task.proto0());
 
-        debug("[launchTasks] offerId:" + json(_offerId) + ", tasks:" + json(tasks));
+        logger.debug("[launchTasks] offerId:" + json(_offerId) + ", tasks:" + json(tasks));
         driver.launchTasks(_offerId, tasks);
     }
 
@@ -60,13 +63,13 @@ public class SchedulerDriverV0 extends net.elodina.mesos.api.scheduler.Scheduler
             );
         }
 
-        debug("[reconcileTasks] " + json(statuses));
+        logger.debug("[reconcileTasks] " + json(statuses));
         driver.reconcileTasks(statuses);
     }
 
     @Override
     public void killTask(String id) {
-        debug("[killTask] " + id);
+        logger.debug("[killTask] " + id);
         driver.killTask(Protos.TaskID.newBuilder().setValue(id).build());
     }
 
@@ -102,20 +105,20 @@ public class SchedulerDriverV0 extends net.elodina.mesos.api.scheduler.Scheduler
     private class SchedulerV0 implements org.apache.mesos.Scheduler {
         @Override
         public void registered(SchedulerDriver driver, Protos.FrameworkID frameworkId, Protos.MasterInfo masterInfo) {
-            debug("[registered] id:" + json(frameworkId) + ", master:" + json(masterInfo));
+            logger.debug("[registered] id:" + json(frameworkId) + ", master:" + json(masterInfo));
             framework.id(framework.id());
             scheduler.subscribed(SchedulerDriverV0.this, frameworkId.getValue(), new Master().proto0(masterInfo));
         }
 
         @Override
         public void reregistered(SchedulerDriver driver, Protos.MasterInfo masterInfo) {
-            debug("[reregistered] " + json(masterInfo));
+            logger.debug("[reregistered] " + json(masterInfo));
             scheduler.subscribed(SchedulerDriverV0.this, framework.id(), new Master().proto0(masterInfo));
         }
 
         @Override
         public void resourceOffers(SchedulerDriver driver, List<Protos.Offer> offers) {
-            debug("[resourceOffers] " + json(offers));
+            logger.debug("[resourceOffers] " + json(offers));
             List<Offer> _offers = new ArrayList<>();
             for (Protos.Offer offer : offers) _offers.add(new Offer().proto0(offer));
             scheduler.offers(_offers);
@@ -123,40 +126,40 @@ public class SchedulerDriverV0 extends net.elodina.mesos.api.scheduler.Scheduler
 
         @Override
         public void offerRescinded(SchedulerDriver driver, Protos.OfferID offerId) {
-            debug("[offerRescinded] " + json(offerId));
+            logger.debug("[offerRescinded] " + json(offerId));
         }
 
         @Override
         public void statusUpdate(SchedulerDriver driver, Protos.TaskStatus status) {
-            debug("[statusUpdate] " + json(status));
+            logger.debug("[statusUpdate] " + json(status));
             scheduler.status(new Task.Status().proto0(status));
         }
 
         @Override
         public void frameworkMessage(SchedulerDriver driver, Protos.ExecutorID executorId, Protos.SlaveID slaveId, byte[] data) {
-            debug("[frameworkMessage] executor:" + json(executorId) + ", slave:" + json(slaveId) + ", data:" + new String(data));
+            logger.debug("[frameworkMessage] executor:" + json(executorId) + ", slave:" + json(slaveId) + ", data:" + new String(data));
             scheduler.message(executorId.getValue(), slaveId.getValue(), data);
         }
 
         @Override
         public void disconnected(SchedulerDriver driver) {
-            debug("[disconnected]");
+            logger.debug("[disconnected]");
             scheduler.disconnected();
         }
 
         @Override
         public void slaveLost(SchedulerDriver driver, Protos.SlaveID slaveId) {
-            debug("[slaveLost] " + json(slaveId));
+            logger.debug("[slaveLost] " + json(slaveId));
         }
 
         @Override
         public void executorLost(SchedulerDriver driver, Protos.ExecutorID executorId, Protos.SlaveID slaveId, int status) {
-            debug("[executorLost] executor" + json(executorId) + ", slave:" + json(slaveId) + ", status:" + status);
+            logger.debug("[executorLost] executor" + json(executorId) + ", slave:" + json(slaveId) + ", status:" + status);
         }
 
         @Override
         public void error(SchedulerDriver driver, String message) {
-            debug("[error] " + message);
+            logger.debug("[error] " + message);
         }
     }
 }
