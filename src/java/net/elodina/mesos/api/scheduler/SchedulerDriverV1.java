@@ -178,11 +178,15 @@ public class SchedulerDriverV1 implements SchedulerDriver {
                 int size = readChunkSize(stream);
                 byte[] buffer = readChunk(stream, size);
 
-                String responseJson = new String(buffer).replaceAll("\\\\/", "/");
+                String responseJson = new String(buffer);
+                logger.debug("[event] " + responseJson);
+
+                responseJson = responseJson
+                    .replaceAll("\\\\/", "/")            // wrong slash escaping bug
+                    .replaceAll("\\{\\}", "{\"_t\":1}"); // expected identified } bug
+
                 Event.Builder event = Event.newBuilder();
                 new JsonFormat().merge(responseJson, ExtensionRegistry.getEmptyRegistry(), event);
-
-                logger.debug("[event] " + responseJson);
                 onEvent(event.build());
             }
 
