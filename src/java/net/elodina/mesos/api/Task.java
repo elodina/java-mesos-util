@@ -191,7 +191,6 @@ public class Task extends Message {
 
 
         public Status() {}
-
         public Status(String id, State state) {
             this.id = id;
             this.state = state;
