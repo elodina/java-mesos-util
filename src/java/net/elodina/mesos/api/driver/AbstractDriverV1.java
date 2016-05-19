@@ -139,7 +139,7 @@ public abstract class AbstractDriverV1 {
 
     protected static String fixUrl(String url) {
         if (!url.startsWith("http://")) url = "http://" + url;
-        if (!url.endsWith("/")) url += "/";
+        if (url.endsWith("/")) url = url.substring(0, url.length() - 1);
         return url;
     }
 

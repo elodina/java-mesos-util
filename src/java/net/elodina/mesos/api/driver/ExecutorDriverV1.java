@@ -9,6 +9,7 @@ import net.elodina.mesos.api.Executor;
 import net.elodina.mesos.api.Framework;
 import net.elodina.mesos.api.Slave;
 import net.elodina.mesos.api.Task;
+import net.elodina.mesos.util.Base64;
 
 import java.util.UUID;
 
@@ -75,7 +76,9 @@ public class ExecutorDriverV1 extends AbstractDriverV1 implements ExecutorDriver
     @Override
     public void sendStatus(Task.Status status) {
         Update.Builder update = Update.newBuilder();
-        if (status.uuid() == null) status.uuid("" + UUID.randomUUID());
+        if (status.uuid() == null) status.uuid(Base64.encode("" + UUID.randomUUID()));
+        if (status.source() == null) status.source(Task.Status.Source.EXECUTOR);
+
         update.setStatus(status.proto1());
         sendCall(newCall(update));
     }
