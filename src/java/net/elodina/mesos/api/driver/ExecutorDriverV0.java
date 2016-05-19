@@ -1,10 +1,11 @@
-package net.elodina.mesos.api.executor;
+package net.elodina.mesos.api.driver;
 
 import com.google.protobuf.Message;
 import com.googlecode.protobuf.format.JsonFormat;
 import net.elodina.mesos.api.Framework;
 import net.elodina.mesos.api.Slave;
 import net.elodina.mesos.api.Task;
+import net.elodina.mesos.api.Executor;
 import org.apache.log4j.Logger;
 import org.apache.mesos.MesosExecutorDriver;
 import org.apache.mesos.Protos;

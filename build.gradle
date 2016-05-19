@@ -1,14 +1,15 @@
 apply plugin: 'idea'
 apply plugin: 'java'
 
-version = '0.0.1.0'
+version = '0.0.2.0'
 
-jar.archiveName = "$name-${version}.jar"
+jar.archiveName = "util-mesos-${version}.jar"
 buildDir = 'out/gradle'
 libsDirName = '../../'
 
 repositories {
     mavenCentral()
+    flatDir { dirs 'lib' }
 }
 
 sourceSets {
@@ -21,7 +22,7 @@ sourceSets {
 }
 
 dependencies {
-    compile "org.apache.mesos:mesos:0.25.0"
+    compile name: "mesos-0.28.1-patched"
     compile "com.google.protobuf:protobuf-java:2.5.0"
     compile 'com.googlecode.protobuf-java-format:protobuf-java-format:1.4'
     compile 'junit:junit:4.12'

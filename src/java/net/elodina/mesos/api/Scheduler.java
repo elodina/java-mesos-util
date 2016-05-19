@@ -1,8 +1,6 @@
-package net.elodina.mesos.api.scheduler;
+package net.elodina.mesos.api;
 
-import net.elodina.mesos.api.Master;
-import net.elodina.mesos.api.Offer;
-import net.elodina.mesos.api.Task;
+import net.elodina.mesos.api.driver.SchedulerDriver;
 
 import java.util.List;
 

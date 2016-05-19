@@ -1,9 +1,6 @@
 package net.elodina.mesos.api;
 
-import com.google.protobuf.ByteString;
 import com.google.protobuf.GeneratedMessage;
-
-import java.nio.charset.Charset;
 
 public class Cred extends Message {
     private String principal;
@@ -32,7 +29,7 @@ public class Cred extends Message {
         org.apache.mesos.Protos.Credential.Builder builder = org.apache.mesos.Protos.Credential.newBuilder();
 
         builder.setPrincipal(principal);
-        builder.setSecret(ByteString.copyFrom(secret.getBytes(Charset.forName("utf-8"))));
+        builder.setSecret(secret);
 
         return builder.build();
     }
@@ -42,7 +39,7 @@ public class Cred extends Message {
         org.apache.mesos.Protos.Credential cred = (org.apache.mesos.Protos.Credential) message;
 
         principal = cred.getPrincipal();
-        secret = cred.getSecret().toStringUtf8();
+        secret = cred.getSecret();
 
         return this;
     }
@@ -52,7 +49,7 @@ public class Cred extends Message {
         org.apache.mesos.v1.Protos.Credential.Builder builder = org.apache.mesos.v1.Protos.Credential.newBuilder();
 
         builder.setPrincipal(principal);
-        builder.setSecret(ByteString.copyFrom(secret.getBytes(Charset.forName("utf-8"))));
+        builder.setSecret(secret);
 
         return builder.build();
     }
@@ -62,7 +59,7 @@ public class Cred extends Message {
         org.apache.mesos.v1.Protos.Credential cred = (org.apache.mesos.v1.Protos.Credential) message;
 
         principal = cred.getPrincipal();
-        secret = cred.getSecret().toStringUtf8();
+        secret = cred.getSecret();
 
         return this;
     }

@@ -1,17 +1,15 @@
-package net.elodina.mesos.api.scheduler;
+package net.elodina.mesos.api.driver;
 
-import com.google.protobuf.ExtensionRegistry;
+import com.google.protobuf.GeneratedMessage;
 import com.googlecode.protobuf.format.JsonFormat;
 import net.elodina.mesos.api.Framework;
 import net.elodina.mesos.api.Offer;
+import net.elodina.mesos.api.Scheduler;
 import net.elodina.mesos.api.Task;
-import net.elodina.mesos.util.Period;
 import net.elodina.mesos.util.Request;
-import org.apache.log4j.Logger;
 import org.apache.mesos.v1.Protos;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,28 +17,15 @@ import java.util.List;
 import static org.apache.mesos.v1.scheduler.Protos.Call;
 import static org.apache.mesos.v1.scheduler.Protos.Event;
 
-public class SchedulerDriverV1 implements SchedulerDriver {
-    private static final Logger logger = Logger.getLogger(SchedulerDriverV0.class);
-
+public class SchedulerDriverV1 extends AbstractDriverV1 implements SchedulerDriver {
     private Scheduler scheduler;
     private Framework framework;
-    private String masterUrl;
-
-    private Period reconnectDelay = new Period("5s");
-    private volatile boolean stopped;
-
-    private volatile boolean subscribed;
-    private volatile String streamId;
 
     public SchedulerDriverV1(Scheduler scheduler, Framework framework, String masterUrl) {
+        super(fixUrl(masterUrl) + "/api/v1/scheduler");
         this.scheduler = scheduler;
         this.framework = framework;
-        this.masterUrl = masterUrl;
     }
-
-    public Period getReconnectDelay() { return reconnectDelay; }
-    public void setReconnectDelay(Period reconnectDelay) { this.reconnectDelay = reconnectDelay; }
-
 
     @Override
     public void declineOffer(String id) {
@@ -111,7 +96,7 @@ public class SchedulerDriverV1 implements SchedulerDriver {
             new JsonFormat().print(call, body);
             logger.debug("[call] " + body);
 
-            Request request = new Request(apiUrl())
+            Request request = new Request(url)
                 .method(Request.Method.POST)
                 .contentType("application/json")
                 .accept("application/json")
@@ -131,99 +116,9 @@ public class SchedulerDriverV1 implements SchedulerDriver {
     }
 
     @Override
-    public boolean run() throws IOException {
-        stopped = false;
+    protected void onEvent(GeneratedMessage obj) {
+        Event event = (Event) obj;
 
-        while (!stopped) {
-            try {
-                run0();
-            } catch (IOException | ApiException e) {
-                if (e instanceof ApiException && ((ApiException)e).isUnrecoverable()) {
-                    logger.debug(e + ", stopping");
-                    return false;
-                }
-
-                logger.debug(e + ", reconnecting after " + reconnectDelay);
-
-                try { Thread.sleep(reconnectDelay.ms()); }
-                catch (InterruptedException ie) { break; }
-            }
-        }
-
-        return true;
-    }
-
-    private void run0() throws IOException {
-        subscribed = false;
-        streamId = null;
-
-        try (Request request = new Request(apiUrl())) {
-            request.method(Request.Method.POST)
-                .contentType("application/json")
-                .accept("application/json");
-
-            StringWriter requestJson = new StringWriter();
-            new JsonFormat().print(subscribeCall(), requestJson);
-            request.body(requestJson.toString().getBytes("utf-8"));
-            logger.debug("[subscribe] " + requestJson);
-
-            Request.Response response = request.send(true);
-            if (response.code() != 200)
-                throw new ApiException("Response: " + response.code() + " - " + response.message() + (response.body() != null ? ": " + new String(response.body()) : ""));
-
-            streamId = response.header("Mesos-Stream-Id");
-
-            InputStream stream = response.stream();
-            while (!stopped) {
-                int size = readChunkSize(stream);
-                byte[] buffer = readChunk(stream, size);
-
-                String responseJson = new String(buffer);
-                logger.debug("[event] " + responseJson);
-
-                responseJson = responseJson
-                    .replaceAll("\\\\/", "/")            // wrong slash escaping bug
-                    .replaceAll("\\{\\}", "{\"_t\":1}"); // expected identified } bug
-
-                Event.Builder event = Event.newBuilder();
-                new JsonFormat().merge(responseJson, ExtensionRegistry.getEmptyRegistry(), event);
-                onEvent(event.build());
-            }
-
-            stream.close();
-        }
-    }
-
-    private String apiUrl() {
-        String url = masterUrl;
-
-        if (!url.startsWith("http://")) url = "http://" + url;
-        if (!url.endsWith("/")) url += "/";
-        url += "api/v1/scheduler";
-
-        return url;
-    }
-
-    private int readChunkSize(InputStream stream) throws IOException {
-        byte b;
-
-        String s = "";
-        while ((b = (byte) stream.read()) != '\n')
-            s += (char)b;
-
-        return Integer.parseInt(s);
-    }
-
-    private byte[] readChunk(InputStream stream, int size) throws IOException {
-        byte[] buffer = new byte[size];
-
-        for (int i = 0; i < size; i++)
-            buffer[i] = (byte) stream.read();
-
-        return buffer;
-    }
-
-    private void onEvent(Event event) throws IOException {
         switch (event.getType()) {
             case SUBSCRIBED:
                 subscribed = true;
@@ -259,7 +154,8 @@ public class SchedulerDriverV1 implements SchedulerDriver {
         return !this.subscribed && error.getMessage().equals("Framework has been removed");
     }
 
-    private Call subscribeCall() {
+    @Override
+    protected Call subscribeCall() {
         Protos.FrameworkInfo framework = this.framework.proto1();
 
         Call.Subscribe.Builder subscribe = Call.Subscribe.newBuilder();
@@ -302,27 +198,5 @@ public class SchedulerDriverV1 implements SchedulerDriver {
         stopped = true;
         subscribed = false;
         streamId = null;
-    }
-
-    @SuppressWarnings("UnusedDeclaration")
-    private static class ApiException extends RuntimeException {
-        private boolean unrecoverable;
-
-        private ApiException(String message) { this(message, null, false); }
-
-        private ApiException(String message, boolean unrecoverable) { this(message, null, unrecoverable); }
-
-        private ApiException(Throwable cause) { this(null, cause); }
-
-        private ApiException(Throwable cause, boolean unrecoverable) { this(null, cause, unrecoverable); }
-
-        private ApiException(String message, Throwable cause) { this(message, cause, false); }
-
-        private ApiException(String message, Throwable cause, boolean unrecoverable) {
-            super(message, cause);
-            this.unrecoverable = unrecoverable;
-        }
-
-        public boolean isUnrecoverable() { return unrecoverable; }
     }
 }

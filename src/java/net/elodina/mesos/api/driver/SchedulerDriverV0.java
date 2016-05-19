@@ -1,8 +1,9 @@
-package net.elodina.mesos.api.scheduler;
+package net.elodina.mesos.api.driver;
 
 import com.google.protobuf.Message;
 import com.googlecode.protobuf.format.JsonFormat;
 import net.elodina.mesos.api.*;
+import net.elodina.mesos.api.Scheduler;
 import org.apache.log4j.Logger;
 import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos;
@@ -14,7 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class SchedulerDriverV0 implements net.elodina.mesos.api.scheduler.SchedulerDriver {
+public class SchedulerDriverV0 implements net.elodina.mesos.api.driver.SchedulerDriver {
     private static final Logger logger = Logger.getLogger(SchedulerDriverV0.class);
 
     private Scheduler scheduler;

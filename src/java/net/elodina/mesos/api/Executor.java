@@ -1,8 +1,6 @@
-package net.elodina.mesos.api.executor;
+package net.elodina.mesos.api;
 
-import net.elodina.mesos.api.Framework;
-import net.elodina.mesos.api.Slave;
-import net.elodina.mesos.api.Task;
+import net.elodina.mesos.api.driver.ExecutorDriver;
 
 public interface Executor {
     void registered(ExecutorDriver driver, Task.Executor executor, Framework framework, Slave slave);

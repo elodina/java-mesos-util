@@ -1,4 +1,4 @@
-package net.elodina.mesos.api.scheduler;
+package net.elodina.mesos.api.driver;
 
 import net.elodina.mesos.api.Task;
 
@@ -13,7 +13,7 @@ public interface SchedulerDriver {
 
     void killTask(String id);
 
-    boolean run() throws Exception;
+    boolean run();
 
     void stop();
 }
