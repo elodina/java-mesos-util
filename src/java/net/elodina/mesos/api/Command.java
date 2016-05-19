@@ -205,9 +205,9 @@ public class Command extends Message {
             org.apache.mesos.Protos.CommandInfo.URI.Builder builder = org.apache.mesos.Protos.CommandInfo.URI.newBuilder();
 
             builder.setValue(value);
-            builder.setExtract(extract);
-            builder.setCache(cache);
-            builder.setExecutable(executable);
+            if (!extract) builder.setExtract(false);
+            if (!cache) builder.setCache(false);
+            if (executable) builder.setExecutable(true);
 
             return builder.build();
         }
@@ -229,9 +229,9 @@ public class Command extends Message {
             org.apache.mesos.v1.Protos.CommandInfo.URI.Builder builder = org.apache.mesos.v1.Protos.CommandInfo.URI.newBuilder();
 
             builder.setValue(value);
-            builder.setExtract(extract);
-            builder.setCache(cache);
-            builder.setExecutable(executable);
+            if (!extract) builder.setExtract(false);
+            if (!cache) builder.setCache(false);
+            if (executable) builder.setExecutable(true);
 
             return builder.build();
         }

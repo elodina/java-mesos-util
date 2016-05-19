@@ -183,11 +183,15 @@ public class Task extends Message {
         private String id;
         private State state;
 
+        private Source source;
+        private Reason reason;
+
         private String message;
         private byte[] data;
 
         private String slaveId;
         private String executorId;
+        private String uuid;
 
 
         public Status() {}
@@ -201,11 +205,16 @@ public class Task extends Message {
             id = values.get("id");
             if (values.containsKey("state")) state = State.valueOf(values.get("state").toUpperCase());
 
+            if (values.containsKey("source")) source = Source.valueOf(values.get("source").toUpperCase());
+            if (values.containsKey("reason")) reason = Reason.valueOf(values.get("reason").toUpperCase());
+
             message = values.get("message");
             if (values.containsKey("data")) data = Strings.parseHex(values.get("data"));
 
             slaveId = values.get("slaveId");
             executorId = values.get("executorId");
+
+            uuid = values.get("uuid");
         }
 
 
@@ -214,6 +223,13 @@ public class Task extends Message {
 
         public State state() { return state; }
         public Status state(State state) { this.state = state; return this; }
+
+
+        public Source source() { return source; }
+        public Status source(Source source) { this.source = source; return this; }
+
+        public Reason reason() { return reason; }
+        public Status reason(Reason reason) { this.reason = reason; return this; }
 
 
         public String message() { return message; }
@@ -229,6 +245,9 @@ public class Task extends Message {
         public String executorId() { return executorId; }
         public Status executorId(String executorId) { this.executorId = executorId; return this; }
 
+        public String uuid() { return uuid; }
+        public Status uuid(String uuid) { this.uuid = uuid; return this; }
+
 
         @Override
         public org.apache.mesos.Protos.TaskStatus proto0() {
@@ -237,11 +256,15 @@ public class Task extends Message {
             builder.setTaskId(org.apache.mesos.Protos.TaskID.newBuilder().setValue(id));
             if (state != null) builder.setState(org.apache.mesos.Protos.TaskState.valueOf("TASK_" + state.name()));
 
+            if (source != null) builder.setSource(org.apache.mesos.Protos.TaskStatus.Source.valueOf("SOURCE_" + source.name()));
+            if (reason != null) builder.setReason(org.apache.mesos.Protos.TaskStatus.Reason.valueOf("REASON_" + reason.name()));
+
             if (message != null) builder.setMessage(message);
             if (data != null) builder.setData(ByteString.copyFrom(data));
 
             if (slaveId != null) builder.setSlaveId(org.apache.mesos.Protos.SlaveID.newBuilder().setValue(slaveId));
             if (executorId != null) builder.setExecutorId(org.apache.mesos.Protos.ExecutorID.newBuilder().setValue(executorId));
+            if (uuid != null) builder.setUuid(ByteString.copyFromUtf8(uuid));
 
             return builder.build();
         }
@@ -251,13 +274,23 @@ public class Task extends Message {
             org.apache.mesos.Protos.TaskStatus status = (org.apache.mesos.Protos.TaskStatus) message;
 
             id = status.getTaskId().getValue();
-            state = State.valueOf(status.getState().name().substring("TASK_".length()));
+            try { state = State.valueOf(status.getState().name().substring("TASK_".length())); }
+            catch (IllegalArgumentException ignore) {}
+
+            if (status.hasSource())
+                try { source = Source.valueOf(status.getSource().name().substring("SOURCE_".length())); }
+                catch (IllegalArgumentException ignore) {}
+
+            if (status.hasReason())
+                try { reason = Reason.valueOf(status.getReason().name().substring("REASON_".length())); }
+                catch (IllegalArgumentException ignore) {}
 
             if (status.hasMessage()) this.message = status.getMessage();
             if (status.hasData()) data = status.getData().toByteArray();
 
             if (status.hasSlaveId()) slaveId = status.getSlaveId().getValue();
             if (status.hasExecutorId()) executorId = status.getExecutorId().getValue();
+            if (status.hasUuid()) uuid = status.getUuid().toStringUtf8();
 
             return this;
         }
@@ -269,11 +302,15 @@ public class Task extends Message {
             builder.setTaskId(org.apache.mesos.v1.Protos.TaskID.newBuilder().setValue(id));
             if (state != null) builder.setState(org.apache.mesos.v1.Protos.TaskState.valueOf("TASK_" + state.name()));
 
+            if (source != null) builder.setSource(org.apache.mesos.v1.Protos.TaskStatus.Source.valueOf("SOURCE_" + source.name()));
+            if (reason != null) builder.setReason(org.apache.mesos.v1.Protos.TaskStatus.Reason.valueOf("REASON_" + reason.name()));
+
             if (message != null) builder.setMessage(message);
             if (data != null) builder.setData(ByteString.copyFrom(data));
 
             if (slaveId != null) builder.setAgentId(org.apache.mesos.v1.Protos.AgentID.newBuilder().setValue(slaveId));
             if (executorId != null) builder.setExecutorId(org.apache.mesos.v1.Protos.ExecutorID.newBuilder().setValue(executorId));
+            if (uuid != null) builder.setUuid(ByteString.copyFromUtf8(uuid));
 
             return builder.build();
         }
@@ -283,13 +320,23 @@ public class Task extends Message {
             org.apache.mesos.v1.Protos.TaskStatus status = (org.apache.mesos.v1.Protos.TaskStatus) message;
 
             id = status.getTaskId().getValue();
-            state = State.valueOf(status.getState().name().substring("TASK_".length()));
+            try { state = State.valueOf(status.getState().name().substring("TASK_".length())); }
+            catch (IllegalArgumentException ignore) {}
+
+            if (status.hasSource())
+                try { source = Source.valueOf(status.getSource().name().substring("SOURCE_".length())); }
+                catch (IllegalArgumentException ignore) {}
+
+            if (status.hasReason())
+                try { reason = Reason.valueOf(status.getReason().name().substring("REASON_".length())); }
+                catch (IllegalArgumentException ignore) {}
 
             if (status.hasMessage()) this.message = status.getMessage();
             if (status.hasData()) data = status.getData().toByteArray();
 
             if (status.hasAgentId()) slaveId = status.getAgentId().getValue();
             if (status.hasExecutorId()) executorId = status.getExecutorId().getValue();
+            if (status.hasUuid()) uuid = status.getUuid().toStringUtf8();
 
             return this;
         }
@@ -300,13 +347,56 @@ public class Task extends Message {
             if (id != null) s += "id:" + shortId(id, _short);
             if (state != null) s += ", state:" + state.name().toLowerCase();
 
+            if (source != null) s += ", source:" + source.name().toLowerCase();
+            if (reason != null) s += ", reason:" + reason.name().toLowerCase();
+
             if (message != null) s += ", message:" + message;
             if (data != null) s += ", data:" + Strings.formatHex(data);
 
             if (slaveId != null) s += ", slaveId:" + shortId(slaveId, _short);
             if (executorId != null) s += ", executorId:" + shortId(executorId, _short);
+            if (uuid != null) s += ", uuid:" + uuid;
 
             return s.startsWith(", ") ? s.substring(2) : s;
+        }
+
+        public enum Source {
+            MASTER,
+            SLAVE,
+            EXECUTOR
+        }
+
+        public enum Reason {
+            COMMAND_EXECUTOR_FAILED,
+
+            CONTAINER_LAUNCH_FAILED,
+            CONTAINER_LIMITATION,
+            CONTAINER_LIMITATION_DISK,
+            CONTAINER_LIMITATION_MEMORY,
+            CONTAINER_PREEMPTED,
+            CONTAINER_UPDATE_FAILED,
+
+            EXECUTOR_REGISTRATION_TIMEOUT,
+            EXECUTOR_REREGISTRATION_TIMEOUT,
+            EXECUTOR_TERMINATED,
+            EXECUTOR_UNREGISTERED,
+
+            FRAMEWORK_REMOVED,
+            GC_ERROR,
+            INVALID_FRAMEWORKID,
+            INVALID_OFFERS, 
+            MASTER_DISCONNECTED,
+            RECONCILIATION,
+            RESOURCES_UNKNOWN,
+
+            SLAVE_DISCONNECTED,
+            SLAVE_REMOVED,
+            SLAVE_RESTARTED,
+            SLAVE_UNKNOWN,
+
+            TASK_INVALID,
+            TASK_UNAUTHORIZED,
+            TASK_UNKNOWN
         }
     }
 

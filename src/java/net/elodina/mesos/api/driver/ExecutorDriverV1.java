@@ -9,8 +9,10 @@ import net.elodina.mesos.api.Executor;
 import net.elodina.mesos.api.Framework;
 import net.elodina.mesos.api.Slave;
 import net.elodina.mesos.api.Task;
-import org.apache.mesos.v1.executor.Protos;
 
+import java.util.UUID;
+
+import static org.apache.mesos.v1.executor.Protos.Call;
 import static org.apache.mesos.v1.executor.Protos.Call.*;
 import static org.apache.mesos.v1.executor.Protos.Event;
 
@@ -23,7 +25,7 @@ public class ExecutorDriverV1 extends AbstractDriverV1 implements ExecutorDriver
     }
 
     @Override
-    protected Protos.Call subscribeCall() { return newCall(Subscribe.newBuilder()); }
+    protected Call subscribeCall() { return newCall(Subscribe.newBuilder()); }
 
     @Override
     protected void onEvent(String json) {
@@ -73,33 +75,34 @@ public class ExecutorDriverV1 extends AbstractDriverV1 implements ExecutorDriver
     @Override
     public void sendStatus(Task.Status status) {
         Update.Builder update = Update.newBuilder();
+        if (status.uuid() == null) status.uuid("" + UUID.randomUUID());
         update.setStatus(status.proto1());
         sendCall(newCall(update));
     }
 
     @Override
     public void sendMessage(byte[] data) {
-        Protos.Call.Message.Builder message = Protos.Call.Message.newBuilder();
+        Call.Message.Builder message = Call.Message.newBuilder();
         message.setData(ByteString.copyFrom(data));
         sendCall(newCall(message));
     }
 
-    private Protos.Call newCall(GeneratedMessage.Builder builder) {
+    private Call newCall(GeneratedMessage.Builder builder) {
         Message obj = builder.build();
 
-        Protos.Call.Builder call = newBuilder();
+        Call.Builder call = newBuilder();
         call.setExecutorId(org.apache.mesos.v1.Protos.ExecutorID.newBuilder().setValue(System.getenv("MESOS_EXECUTOR_ID")));
         call.setFrameworkId(org.apache.mesos.v1.Protos.FrameworkID.newBuilder().setValue(System.getenv("MESOS_FRAMEWORK_ID")));
 
         if (obj instanceof Subscribe) {
             call.setSubscribe((Subscribe) obj);
-            call.setType(Type.SUBSCRIBE);
-        } else if (obj instanceof Protos.Call.Message) {
-            call.setMessage((Protos.Call.Message) obj);
-            call.setType(Type.MESSAGE);
+            call.setType(Call.Type.SUBSCRIBE);
+        } else if (obj instanceof Call.Message) {
+            call.setMessage((Call.Message) obj);
+            call.setType(Call.Type.MESSAGE);
         } else if (obj instanceof Update) {
             call.setUpdate((Update) obj);
-            call.setType(Type.UPDATE);
+            call.setType(Call.Type.UPDATE);
         } else
             throw new UnsupportedOperationException("Unsupported object " + obj);
 
