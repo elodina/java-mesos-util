@@ -93,7 +93,7 @@ public class Command extends Message {
 
         uris = new ArrayList<>();
         for (org.apache.mesos.v1.Protos.CommandInfo.URI uri : command.getUrisList())
-            uris.add(new URI().proto0(uri));
+            uris.add(new URI().proto1(uri));
 
         if (command.hasEnvironment()) {
             env = new LinkedHashMap<>();
@@ -154,6 +154,8 @@ public class Command extends Message {
     public static class URI extends Message {
         private String value;
         private boolean extract = true;
+        private boolean cache = true;
+        private boolean executable;
 
         public URI() {}
 
@@ -176,6 +178,8 @@ public class Command extends Message {
                 }
 
                 if (values.containsKey("extract")) extract = Boolean.parseBoolean(values.get("extract"));
+                if (values.containsKey("cache")) cache = Boolean.parseBoolean(values.get("cache"));
+                if (values.containsKey("executable")) executable = Boolean.parseBoolean(values.get("executable"));
             }
         }
 
@@ -190,12 +194,20 @@ public class Command extends Message {
         public boolean extract() { return extract; }
         public URI extract(boolean extract) { this.extract = extract; return this; }
 
+        public boolean cache() { return cache; }
+        public URI cache(boolean cache) { this.cache = cache; return this; }
+
+        public boolean executable() { return executable; }
+        public URI executable(boolean executable) { this.executable = executable; return this; }
+
         @Override
         public org.apache.mesos.Protos.CommandInfo.URI proto0() {
             org.apache.mesos.Protos.CommandInfo.URI.Builder builder = org.apache.mesos.Protos.CommandInfo.URI.newBuilder();
 
             builder.setValue(value);
             builder.setExtract(extract);
+            builder.setCache(cache);
+            builder.setExecutable(executable);
 
             return builder.build();
         }
@@ -206,6 +218,8 @@ public class Command extends Message {
 
             value = uri.getValue();
             extract = uri.getExtract();
+            cache = uri.getCache();
+            executable = uri.getExecutable();
 
             return this;
         }
@@ -216,6 +230,8 @@ public class Command extends Message {
 
             builder.setValue(value);
             builder.setExtract(extract);
+            builder.setCache(cache);
+            builder.setExecutable(executable);
 
             return builder.build();
         }
@@ -226,18 +242,20 @@ public class Command extends Message {
 
             value = uri.getValue();
             extract = uri.getExtract();
+            cache = uri.getCache();
+            executable = uri.getExecutable();
 
             return this;
         }
 
         public int hashCode() {
-            return 31 * value.hashCode() + Boolean.valueOf(extract).hashCode();
+            return Arrays.asList(value, extract, cache, executable).hashCode();
         }
 
         public boolean equals(Object obj) {
             if (!(obj instanceof URI)) return false;
             URI other = (URI) obj;
-            return value.equals(other.value) && extract == other.extract;
+            return Arrays.asList(value, extract, cache, executable).equals(Arrays.asList(other.value, other.extract, other.cache, other.executable));
         }
 
         public String toString(boolean _short) {
@@ -245,6 +263,8 @@ public class Command extends Message {
 
             s += value;
             if (!extract) s += ", extract:false";
+            if (!cache) s += ", cache:false";
+            if (executable) s += ", executable:true";
 
             return s;
         }

@@ -1,16 +1,15 @@
 package net.elodina.mesos.api.driver;
 
+import com.google.protobuf.ExtensionRegistry;
 import com.google.protobuf.GeneratedMessage;
+import com.google.protobuf.Message;
 import com.googlecode.protobuf.format.JsonFormat;
 import net.elodina.mesos.api.Framework;
 import net.elodina.mesos.api.Offer;
 import net.elodina.mesos.api.Scheduler;
 import net.elodina.mesos.api.Task;
-import net.elodina.mesos.util.Request;
 import org.apache.mesos.v1.Protos;
 
-import java.io.IOException;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,14 +30,7 @@ public class SchedulerDriverV1 extends AbstractDriverV1 implements SchedulerDriv
     public void declineOffer(String id) {
         Call.Decline.Builder decline = Call.Decline.newBuilder();
         decline.addOfferIds(Protos.OfferID.newBuilder().setValue(id));
-
-        Call call = Call.newBuilder()
-            .setFrameworkId(Protos.FrameworkID.newBuilder().setValue(framework.id()))
-            .setType(Call.Type.DECLINE)
-            .setDecline(decline)
-            .build();
-
-        sendCall(call);
+        sendCall(newCall(decline));
     }
 
     @Override
@@ -51,13 +43,7 @@ public class SchedulerDriverV1 extends AbstractDriverV1 implements SchedulerDriv
             .addOfferIds(Protos.OfferID.newBuilder().setValue(offerId))
             .addOperations(operation);
 
-        Call call = Call.newBuilder()
-            .setFrameworkId(Protos.FrameworkID.newBuilder().setValue(framework.id()))
-            .setType(Call.Type.ACCEPT)
-            .setAccept(accept)
-            .build();
-
-        sendCall(call);
+        sendCall(newCall(accept));
     }
 
     @Override
@@ -67,57 +53,22 @@ public class SchedulerDriverV1 extends AbstractDriverV1 implements SchedulerDriv
         for (String id : ids)
             reconcile.addTasks(Call.Reconcile.Task.newBuilder().setTaskId(Protos.TaskID.newBuilder().setValue(id)));
 
-        Call call = Call.newBuilder()
-            .setFrameworkId(Protos.FrameworkID.newBuilder().setValue(framework.id()))
-            .setType(Call.Type.RECONCILE)
-            .setReconcile(reconcile)
-            .build();
-
-        sendCall(call);
+        sendCall(newCall(reconcile));
     }
 
     @Override
     public void killTask(String id) {
-        Call.Kill.Builder kill = Call.Kill.newBuilder();
-        kill.setTaskId(Protos.TaskID.newBuilder().setValue(id));
-
-        Call call = Call.newBuilder()
-            .setFrameworkId(Protos.FrameworkID.newBuilder().setValue(framework.id()))
-            .setType(Call.Type.KILL)
-            .setKill(kill)
-            .build();
-
-        sendCall(call);
-    }
-
-    private void sendCall(Call call) {
-        try {
-            StringWriter body = new StringWriter();
-            new JsonFormat().print(call, body);
-            logger.debug("[call] " + body);
-
-            Request request = new Request(url)
-                .method(Request.Method.POST)
-                .contentType("application/json")
-                .accept("application/json")
-                .body(("" + body).getBytes("utf-8"));
-
-            if (streamId != null) // Mesos 0.25 has no streamId
-                request.header("Mesos-Stream-Id", streamId);
-
-            Request.Response response = request.send();
-            logger.debug("[response] " + response.code() + " - " + response.message() + (response.body() != null ? ": " + new String(response.body()) : ""));
-            if (response.code() != 202)
-                throw new ApiException("Response: " + response.code() + " - " + response.message() + (response.body() != null ? ": " + new String(response.body()) : ""));
-
-        } catch (IOException e) {
-            throw new ApiException(e);
-        }
+        Call.Kill.Builder kill = Call.Kill.newBuilder()
+            .setTaskId(Protos.TaskID.newBuilder().setValue(id));
+        sendCall(newCall(kill));
     }
 
     @Override
-    protected void onEvent(GeneratedMessage obj) {
-        Event event = (Event) obj;
+    protected void onEvent(String json) {
+        Event.Builder builder = Event.newBuilder();
+        try { new JsonFormat().merge(json, ExtensionRegistry.getEmptyRegistry(), builder); }
+        catch (JsonFormat.ParseException e) { throw new ApiException(e); }
+        Event event = builder.build();
 
         switch (event.getType()) {
             case SUBSCRIBED:
@@ -156,45 +107,56 @@ public class SchedulerDriverV1 extends AbstractDriverV1 implements SchedulerDriv
 
     @Override
     protected Call subscribeCall() {
-        Protos.FrameworkInfo framework = this.framework.proto1();
-
-        Call.Subscribe.Builder subscribe = Call.Subscribe.newBuilder();
-        subscribe.setFrameworkInfo(framework);
-
-        Call.Builder call = Call.newBuilder();
-        call.setSubscribe(subscribe);
-        call.setType(Call.Type.SUBSCRIBE);
-        if (framework.hasId()) call.setFrameworkId(framework.getId());
-
-        return call.build();
+        Call.Subscribe.Builder subscribe = Call.Subscribe.newBuilder()
+            .setFrameworkInfo(framework.proto1());
+        return newCall(subscribe);
     }
 
     private Call acknowledgeCall(Protos.TaskStatus status) {
-        Protos.FrameworkInfo framework = this.framework.proto1();
-
         Call.Acknowledge.Builder acknowledge = Call.Acknowledge.newBuilder()
             .setAgentId(status.getAgentId())
             .setTaskId(status.getTaskId())
             .setUuid(status.getUuid());
 
+        return newCall(acknowledge);
+    }
+
+    private Call newCall(GeneratedMessage.Builder builder) {
+        Message obj = builder.build();
+        Protos.FrameworkInfo framework = this.framework.proto1();
+
         Call.Builder call = Call.newBuilder();
-        call.setAcknowledge(acknowledge);
-        call.setType(Call.Type.ACKNOWLEDGE);
         if (framework.hasId()) call.setFrameworkId(framework.getId());
+
+        if (obj == null) {
+            call.setType(Call.Type.TEARDOWN);
+        } else if (obj instanceof Call.Subscribe) {
+            call.setSubscribe((Call.Subscribe) obj);
+            call.setType(Call.Type.SUBSCRIBE);
+        } else if (obj instanceof Call.Acknowledge) {
+            call.setAcknowledge((Call.Acknowledge) obj);
+            call.setType(Call.Type.ACKNOWLEDGE);
+        } else if (obj instanceof Call.Kill) {
+            call.setKill((Call.Kill) obj);
+            call.setType(Call.Type.KILL);
+        } else if (obj instanceof Call.Reconcile) {
+            call.setReconcile((Call.Reconcile) obj);
+            call.setType(Call.Type.RECONCILE);
+        } else if (obj instanceof Call.Accept) {
+            call.setAccept((Call.Accept) obj);
+            call.setType(Call.Type.ACCEPT);
+        } else if (obj instanceof Call.Decline) {
+            call.setDecline((Call.Decline) obj);
+            call.setType(Call.Type.DECLINE);
+        } else
+            throw new UnsupportedOperationException("Unsupported object " + obj);
 
         return call.build();
     }
 
     @Override
     public void stop() {
-        Protos.FrameworkInfo framework = this.framework.proto1();
-
-        Call.Builder call = Call.newBuilder()
-            .setType(Call.Type.TEARDOWN);
-
-        if (framework.hasId()) call.setFrameworkId(framework.getId());
-
-        sendCall(call.build());
+        sendCall(null);
         stopped = true;
         subscribed = false;
         streamId = null;

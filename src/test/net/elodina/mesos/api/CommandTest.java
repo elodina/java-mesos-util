@@ -59,13 +59,11 @@ public class CommandTest {
         assertTrue(uri.extract());
 
         // with attrs
-        uri = new URI("http://localhost, extract:false");
+        uri = new URI("http://localhost, extract:false, cache:false, executable:true");
         assertEquals("http://localhost", uri.value());
         assertFalse(uri.extract());
-
-        uri = new URI("http://localhost, extract:true");
-        assertEquals("http://localhost", uri.value());
-        assertTrue(uri.extract());
+        assertFalse(uri.cache());
+        assertTrue(uri.executable());
     }
 
     @Test
@@ -73,11 +71,12 @@ public class CommandTest {
         assertEquals("http://localhost", "" + new URI("http://localhost"));
         assertEquals("http://localhost", "" + new URI("http://localhost, extract:true"));
         assertEquals("http://localhost, extract:false", "" + new URI("http://localhost, extract:false"));
+        assertEquals("http://localhost, extract:false, cache:false, executable:true", "" + new URI("http://localhost, extract:false, cache:false, executable:true"));
     }
 
     @Test
     public void URI_proto0() {
-        URI uri = new URI("http://localhost, extract:false");
+        URI uri = new URI("http://localhost, extract:false, cache:false, executable:true");
         org.apache.mesos.Protos.CommandInfo.URI message = uri.proto0();
 
         URI read = new URI().proto0(message);
@@ -86,7 +85,7 @@ public class CommandTest {
 
     @Test
     public void URI_proto1() {
-        URI uri = new URI("http://localhost, extract:false");
+        URI uri = new URI("http://localhost, extract:false, cache:false, executable:true");
         org.apache.mesos.v1.Protos.CommandInfo.URI message = uri.proto1();
 
         URI read = new URI().proto1(message);

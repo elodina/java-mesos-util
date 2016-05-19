@@ -1,12 +1,10 @@
 package net.elodina.mesos.api.driver;
 
-import com.google.protobuf.ExtensionRegistry;
 import com.google.protobuf.GeneratedMessage;
 import com.googlecode.protobuf.format.JsonFormat;
 import net.elodina.mesos.util.Period;
 import net.elodina.mesos.util.Request;
 import org.apache.log4j.Logger;
-import org.apache.mesos.v1.scheduler.Protos;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -76,16 +74,14 @@ public abstract class AbstractDriverV1 {
                 int size = readChunkSize(stream);
                 byte[] buffer = readChunk(stream, size);
 
-                String responseJson = new String(buffer);
-                logger.debug("[event] " + responseJson);
+                String json = new String(buffer);
+                logger.debug("[event] " + json);
 
-                responseJson = responseJson
+                json = json
                     .replaceAll("\\\\/", "/")            // wrong slash escaping bug
                     .replaceAll("\\{\\}", "{\"_t\":1}"); // expected identified } bug
 
-                Protos.Event.Builder event = Protos.Event.newBuilder();
-                new JsonFormat().merge(responseJson, ExtensionRegistry.getEmptyRegistry(), event);
-                onEvent(event.build());
+                onEvent(json);
             }
 
             stream.close();
@@ -113,7 +109,33 @@ public abstract class AbstractDriverV1 {
 
     protected abstract GeneratedMessage subscribeCall();
 
-    protected abstract void onEvent(GeneratedMessage event);
+    protected abstract void onEvent(String json);
+
+    protected void sendCall(GeneratedMessage call) {
+        try {
+            StringWriter body = new StringWriter();
+            new JsonFormat().print(call, body);
+            logger.debug("[call] " + body);
+
+            Request request = new Request(url)
+                .method(Request.Method.POST)
+                .contentType("application/json")
+                .accept("application/json")
+                .body(("" + body).getBytes("utf-8"));
+
+            if (streamId != null) // Mesos 0.25 has no streamId
+                request.header("Mesos-Stream-Id", streamId);
+
+            Request.Response response = request.send();
+            logger.debug("[response] " + response.code() + " - " + response.message() + (response.body() != null ? ": " + new String(response.body()) : ""));
+            if (response.code() != 202)
+                throw new ApiException("Response: " + response.code() + " - " + response.message() + (response.body() != null ? ": " + new String(response.body()) : ""));
+
+        } catch (IOException e) {
+            throw new ApiException(e);
+        }
+    }
+
 
     protected static String fixUrl(String url) {
         if (!url.startsWith("http://")) url = "http://" + url;
