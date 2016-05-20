@@ -65,9 +65,9 @@ public class TaskTest {
         assertEquals("slaveId", status.slaveId());
         assertEquals("executorId", status.executorId());
 
-        status = new Status("uuid:uuid, source:master, reason:task_unknown");
+        status = new Status("uuid:0001, source:master, reason:task_unknown");
         assertEquals(Status.Source.MASTER, status.source());
-        assertEquals("uuid", status.uuid());
+        assertTrue(Arrays.toString(status.uuid()), Arrays.equals(new byte[]{0,1}, status.uuid()));
     }
 
     @Test
@@ -75,12 +75,12 @@ public class TaskTest {
         assertEquals("", "" + new Status(""));
         assertEquals("id:1", "" + new Status("id:1"));
         assertEquals("slaveId:1, executorId:2", "" + new Status("slaveId:1, executorId:2"));
-        assertEquals("source:slave, reason:task_unknown, uuid:2", "" + new Status("source:slave, reason:task_unknown, uuid:2"));
+        assertEquals("source:slave, reason:task_unknown, uuid:02", "" + new Status("source:slave, reason:task_unknown, uuid:02"));
     }
 
     @Test
     public void Status_proto0() {
-        Status status = new Status("id:1, state:starting, executorId:2, message:123, data:00, uuid:3, source:executor, reason:task_unknown");
+        Status status = new Status("id:1, state:starting, executorId:2, message:123, data:00, uuid:03, source:executor, reason:task_unknown");
         org.apache.mesos.Protos.TaskStatus message = status.proto0();
 
         Status read = new Status().proto0(message);
@@ -89,7 +89,7 @@ public class TaskTest {
 
     @Test
     public void Status_proto1() {
-        Status status = new Status("id:1, state:starting, executorId:2, message:123, data:00, uuid:3, source:executor, reason:task_unknown");
+        Status status = new Status("id:1, state:starting, executorId:2, message:123, data:00, uuid:03, source:executor, reason:task_unknown");
         org.apache.mesos.v1.Protos.TaskStatus message = status.proto1();
 
         Status read = new Status().proto1(message);

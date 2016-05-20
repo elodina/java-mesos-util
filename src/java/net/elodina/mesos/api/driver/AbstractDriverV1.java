@@ -33,8 +33,8 @@ public abstract class AbstractDriverV1 {
         while (!stopped) {
             try {
                 run0();
-            } catch (IOException | ApiException e) {
-                if (e instanceof ApiException && ((ApiException)e).isUnrecoverable()) {
+            } catch (IOException | DriverException e) {
+                if (e instanceof DriverException && ((DriverException)e).isUnrecoverable()) {
                     logger.debug(e + ", stopping");
                     return false;
                 }
@@ -65,7 +65,7 @@ public abstract class AbstractDriverV1 {
 
             Request.Response response = request.send(true);
             if (response.code() != 200)
-                throw new ApiException("Response: " + response.code() + " - " + response.message() + (response.body() != null ? ": " + new String(response.body()) : ""));
+                throw new DriverException("Response: " + response.code() + " - " + response.message() + (response.body() != null ? ": " + new String(response.body()) : ""));
 
             streamId = response.header("Mesos-Stream-Id");
 
@@ -129,10 +129,10 @@ public abstract class AbstractDriverV1 {
             Request.Response response = request.send();
             logger.debug("[response] " + response.code() + " - " + response.message() + (response.body() != null ? ": " + new String(response.body()) : ""));
             if (response.code() != 202)
-                throw new ApiException("Response: " + response.code() + " - " + response.message() + (response.body() != null ? ": " + new String(response.body()) : ""));
+                throw new DriverException("Response: " + response.code() + " - " + response.message() + (response.body() != null ? ": " + new String(response.body()) : ""));
 
         } catch (IOException e) {
-            throw new ApiException(e);
+            throw new DriverException(e);
         }
     }
 
@@ -143,25 +143,4 @@ public abstract class AbstractDriverV1 {
         return url;
     }
 
-    @SuppressWarnings("UnusedDeclaration")
-    protected static class ApiException extends RuntimeException {
-        private boolean unrecoverable;
-
-        protected ApiException(String message) { this(message, null, false); }
-
-        protected ApiException(String message, boolean unrecoverable) { this(message, null, unrecoverable); }
-
-        protected ApiException(Throwable cause) { this(null, cause); }
-
-        protected ApiException(Throwable cause, boolean unrecoverable) { this(null, cause, unrecoverable); }
-
-        protected ApiException(String message, Throwable cause) { this(message, cause, false); }
-
-        protected ApiException(String message, Throwable cause, boolean unrecoverable) {
-            super(message, cause);
-            this.unrecoverable = unrecoverable;
-        }
-
-        public boolean isUnrecoverable() { return unrecoverable; }
-    }
 }

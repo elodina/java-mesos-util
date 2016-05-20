@@ -191,7 +191,7 @@ public class Task extends Message {
 
         private String slaveId;
         private String executorId;
-        private String uuid;
+        private byte[] uuid;
 
 
         public Status() {}
@@ -214,7 +214,7 @@ public class Task extends Message {
             slaveId = values.get("slaveId");
             executorId = values.get("executorId");
 
-            uuid = values.get("uuid");
+            if (values.containsKey("uuid")) uuid = Strings.parseHex(values.get("uuid"));
         }
 
 
@@ -245,8 +245,8 @@ public class Task extends Message {
         public String executorId() { return executorId; }
         public Status executorId(String executorId) { this.executorId = executorId; return this; }
 
-        public String uuid() { return uuid; }
-        public Status uuid(String uuid) { this.uuid = uuid; return this; }
+        public byte[] uuid() { return uuid; }
+        public Status uuid(byte[] uuid) { this.uuid = uuid; return this; }
 
 
         @Override
@@ -264,7 +264,7 @@ public class Task extends Message {
 
             if (slaveId != null) builder.setSlaveId(org.apache.mesos.Protos.SlaveID.newBuilder().setValue(slaveId));
             if (executorId != null) builder.setExecutorId(org.apache.mesos.Protos.ExecutorID.newBuilder().setValue(executorId));
-            if (uuid != null) builder.setUuid(ByteString.copyFromUtf8(uuid));
+            if (uuid != null) builder.setUuid(ByteString.copyFrom(uuid));
 
             return builder.build();
         }
@@ -290,7 +290,7 @@ public class Task extends Message {
 
             if (status.hasSlaveId()) slaveId = status.getSlaveId().getValue();
             if (status.hasExecutorId()) executorId = status.getExecutorId().getValue();
-            if (status.hasUuid()) uuid = status.getUuid().toStringUtf8();
+            if (status.hasUuid()) uuid = status.getUuid().toByteArray();
 
             return this;
         }
@@ -310,7 +310,7 @@ public class Task extends Message {
 
             if (slaveId != null) builder.setAgentId(org.apache.mesos.v1.Protos.AgentID.newBuilder().setValue(slaveId));
             if (executorId != null) builder.setExecutorId(org.apache.mesos.v1.Protos.ExecutorID.newBuilder().setValue(executorId));
-            if (uuid != null) builder.setUuid(ByteString.copyFromUtf8(uuid));
+            if (uuid != null) builder.setUuid(ByteString.copyFrom(uuid));
 
             return builder.build();
         }
@@ -336,7 +336,7 @@ public class Task extends Message {
 
             if (status.hasAgentId()) slaveId = status.getAgentId().getValue();
             if (status.hasExecutorId()) executorId = status.getExecutorId().getValue();
-            if (status.hasUuid()) uuid = status.getUuid().toStringUtf8();
+            if (status.hasUuid()) uuid = status.getUuid().toByteArray();
 
             return this;
         }
@@ -355,7 +355,7 @@ public class Task extends Message {
 
             if (slaveId != null) s += ", slaveId:" + shortId(slaveId, _short);
             if (executorId != null) s += ", executorId:" + shortId(executorId, _short);
-            if (uuid != null) s += ", uuid:" + uuid;
+            if (uuid != null) s += ", uuid:" + Strings.formatHex(uuid);
 
             return s.startsWith(", ") ? s.substring(2) : s;
         }

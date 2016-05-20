@@ -67,7 +67,7 @@ public class SchedulerDriverV1 extends AbstractDriverV1 implements SchedulerDriv
     protected void onEvent(String json) {
         Event.Builder builder = Event.newBuilder();
         try { new JsonFormat().merge(json, ExtensionRegistry.getEmptyRegistry(), builder); }
-        catch (JsonFormat.ParseException e) { throw new ApiException(e); }
+        catch (JsonFormat.ParseException e) { throw new DriverException(e); }
         Event event = builder.build();
 
         switch (event.getType()) {
@@ -93,7 +93,7 @@ public class SchedulerDriverV1 extends AbstractDriverV1 implements SchedulerDriv
                 break;
             case ERROR:
                 Event.Error error = event.getError();
-                throw new ApiException(error.getMessage(), isUnrecoverable(error));
+                throw new DriverException(error.getMessage(), isUnrecoverable(error));
             case RESCIND: case FAILURE: case HEARTBEAT:
                 break; // ignore
             default:
