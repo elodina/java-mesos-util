@@ -71,7 +71,7 @@ public class ExecutorDriverV1 extends AbstractDriverV1 implements ExecutorDriver
     @Override
     public void stop() {
         stopped = true;
-        throw new DriverException("stopped");
+        throw new DriverException("stopped", true);
     }
 
     @Override
