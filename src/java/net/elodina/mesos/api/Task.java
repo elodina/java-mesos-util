@@ -355,7 +355,7 @@ public class Task extends Message {
 
             if (slaveId != null) s += ", slaveId:" + shortId(slaveId, _short);
             if (executorId != null) s += ", executorId:" + shortId(executorId, _short);
-            if (uuid != null) s += ", uuid:" + Strings.formatHex(uuid);
+            if (uuid != null) s += ", uuid:" + shortId(Strings.formatHex(uuid), _short);
 
             return s.startsWith(", ") ? s.substring(2) : s;
         }
