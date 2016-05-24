@@ -5,9 +5,10 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
-import static net.elodina.mesos.api.Task.Executor;
 import static net.elodina.mesos.api.Task.Status;
-import static org.junit.Assert.*;
+import static net.elodina.mesos.api.Task.Executor;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class TaskTest {
     @Test
@@ -75,12 +76,12 @@ public class TaskTest {
         assertEquals("", "" + new Status(""));
         assertEquals("id:1", "" + new Status("id:1"));
         assertEquals("slaveId:1, executorId:2", "" + new Status("slaveId:1, executorId:2"));
-        assertEquals("source:slave, reason:task_unknown, uuid:02", "" + new Status("source:slave, reason:task_unknown, uuid:02"));
+        assertEquals("time:3, source:slave, reason:task_unknown, uuid:02", "" + new Status("time:3, source:slave, reason:task_unknown, uuid:02"));
     }
 
     @Test
     public void Status_proto0() {
-        Status status = new Status("id:1, state:starting, executorId:2, message:123, data:00, uuid:03, source:executor, reason:task_unknown");
+        Status status = new Status("id:1, time:2, state:starting, executorId:3, message:123, data:00, uuid:04, source:executor, reason:task_unknown");
         org.apache.mesos.Protos.TaskStatus message = status.proto0();
 
         Status read = new Status().proto0(message);
@@ -89,7 +90,7 @@ public class TaskTest {
 
     @Test
     public void Status_proto1() {
-        Status status = new Status("id:1, state:starting, executorId:2, message:123, data:00, uuid:03, source:executor, reason:task_unknown");
+        Status status = new Status("id:1, time:2, state:starting, executorId:3, message:123, data:00, uuid:04, source:executor, reason:task_unknown");
         org.apache.mesos.v1.Protos.TaskStatus message = status.proto1();
 
         Status read = new Status().proto1(message);

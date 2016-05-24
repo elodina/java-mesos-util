@@ -4,6 +4,7 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.GeneratedMessage;
 import net.elodina.mesos.util.Strings;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class Task extends Message {
@@ -182,6 +183,7 @@ public class Task extends Message {
     public static class Status extends Message {
         private String id;
         private State state;
+        private Date time;
 
         private Source source;
         private Reason reason;
@@ -204,6 +206,7 @@ public class Task extends Message {
             Map<String, String> values = Strings.parseMap(s, ',', ':');
             id = values.get("id");
             if (values.containsKey("state")) state = State.valueOf(values.get("state").toUpperCase());
+            if (values.containsKey("time")) time = new Date(Long.parseLong(values.get("time")));
 
             if (values.containsKey("source")) source = Source.valueOf(values.get("source").toUpperCase());
             if (values.containsKey("reason")) reason = Reason.valueOf(values.get("reason").toUpperCase());
@@ -223,6 +226,9 @@ public class Task extends Message {
 
         public State state() { return state; }
         public Status state(State state) { this.state = state; return this; }
+
+        public Date time() { return time; }
+        public Status time(Date time) { this.time = time; return this; }
 
 
         public Source source() { return source; }
@@ -255,6 +261,7 @@ public class Task extends Message {
 
             builder.setTaskId(org.apache.mesos.Protos.TaskID.newBuilder().setValue(id));
             if (state != null) builder.setState(org.apache.mesos.Protos.TaskState.valueOf("TASK_" + state.name()));
+            if (time != null) builder.setTimestamp(time.getTime() / 1000d);
 
             if (source != null) builder.setSource(org.apache.mesos.Protos.TaskStatus.Source.valueOf("SOURCE_" + source.name()));
             if (reason != null) builder.setReason(org.apache.mesos.Protos.TaskStatus.Reason.valueOf("REASON_" + reason.name()));
@@ -276,6 +283,7 @@ public class Task extends Message {
             id = status.getTaskId().getValue();
             try { state = State.valueOf(status.getState().name().substring("TASK_".length())); }
             catch (IllegalArgumentException ignore) {}
+            if (status.hasTimestamp()) time = new Date((long) (status.getTimestamp() * 1000));
 
             if (status.hasSource())
                 try { source = Source.valueOf(status.getSource().name().substring("SOURCE_".length())); }
@@ -301,6 +309,7 @@ public class Task extends Message {
 
             builder.setTaskId(org.apache.mesos.v1.Protos.TaskID.newBuilder().setValue(id));
             if (state != null) builder.setState(org.apache.mesos.v1.Protos.TaskState.valueOf("TASK_" + state.name()));
+            if (time != null) builder.setTimestamp(time.getTime() / 1000d);
 
             if (source != null) builder.setSource(org.apache.mesos.v1.Protos.TaskStatus.Source.valueOf("SOURCE_" + source.name()));
             if (reason != null) builder.setReason(org.apache.mesos.v1.Protos.TaskStatus.Reason.valueOf("REASON_" + reason.name()));
@@ -322,6 +331,7 @@ public class Task extends Message {
             id = status.getTaskId().getValue();
             try { state = State.valueOf(status.getState().name().substring("TASK_".length())); }
             catch (IllegalArgumentException ignore) {}
+            if (status.hasTimestamp()) time = new Date((long) (status.getTimestamp() * 1000));
 
             if (status.hasSource())
                 try { source = Source.valueOf(status.getSource().name().substring("SOURCE_".length())); }
@@ -346,6 +356,9 @@ public class Task extends Message {
 
             if (id != null) s += "id:" + shortId(id, _short);
             if (state != null) s += ", state:" + state.name().toLowerCase();
+
+            SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ssX");
+            if (time != null) s += ", time:" + (_short ? timeFormat.format(time) : time.getTime());
 
             if (source != null) s += ", source:" + source.name().toLowerCase();
             if (reason != null) s += ", reason:" + reason.name().toLowerCase();

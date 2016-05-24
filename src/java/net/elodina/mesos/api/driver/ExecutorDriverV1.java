@@ -12,6 +12,7 @@ import net.elodina.mesos.api.Task;
 import net.elodina.mesos.util.Base64;
 
 import java.nio.ByteBuffer;
+import java.util.Date;
 import java.util.UUID;
 
 import static org.apache.mesos.v1.executor.Protos.Call;
@@ -76,7 +77,9 @@ public class ExecutorDriverV1 extends AbstractDriverV1 implements ExecutorDriver
     @Override
     public void sendStatus(Task.Status status) {
         Update.Builder update = Update.newBuilder();
-        if (status.uuid() == null) status.uuid(new String(Base64.encode(uuid())).getBytes());
+        if (status.time() == null) status.time(new Date());
+        if (status.uuid() == null) status.uuid(new String(Base64.encode(nextUuid())).getBytes());
+
         if (status.source() == null) status.source(Task.Status.Source.EXECUTOR);
         if (status.executorId() == null) status.executorId(System.getenv("MESOS_EXECUTOR_ID"));
 
@@ -84,7 +87,7 @@ public class ExecutorDriverV1 extends AbstractDriverV1 implements ExecutorDriver
         sendCall(newCall(update));
     }
 
-    private byte[] uuid() {
+    private static byte[] nextUuid() {
         UUID uuid = UUID.randomUUID();
         long hi = uuid.getMostSignificantBits();
         long lo = uuid.getLeastSignificantBits();
