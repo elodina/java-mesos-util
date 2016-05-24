@@ -38,7 +38,7 @@ public class ExecutorDriverV1 extends AbstractDriverV1 implements ExecutorDriver
 
         switch (event.getType()) {
             case SUBSCRIBED:
-                subscribed = true;
+                state = State.SUBSCRIBED;
                 Event.Subscribed subscribed = event.getSubscribed();
                 executor.registered(this, new Task.Executor().proto1(subscribed.getExecutorInfo()), new Framework().proto1(subscribed.getFrameworkInfo()), new Slave().proto1(subscribed.getAgentInfo()));
                 break;
@@ -70,8 +70,7 @@ public class ExecutorDriverV1 extends AbstractDriverV1 implements ExecutorDriver
 
     @Override
     public void stop() {
-        stopped = true;
-        throw new DriverException("stopped", true);
+        state = State.STOPPED;
     }
 
     @Override

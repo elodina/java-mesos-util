@@ -72,7 +72,7 @@ public class SchedulerDriverV1 extends AbstractDriverV1 implements SchedulerDriv
 
         switch (event.getType()) {
             case SUBSCRIBED:
-                subscribed = true;
+                state = State.SUBSCRIBED;
                 Event.Subscribed subscribed = event.getSubscribed();
                 framework.id(subscribed.getFrameworkId().getValue());
                 scheduler.subscribed(this, subscribed.getFrameworkId().getValue(), null);
@@ -102,7 +102,7 @@ public class SchedulerDriverV1 extends AbstractDriverV1 implements SchedulerDriv
     }
 
     private boolean isUnrecoverable(Event.Error error) {
-        return !this.subscribed && error.getMessage().equals("Framework has been removed");
+        return this.state != State.SUBSCRIBED && error.getMessage().equals("Framework has been removed");
     }
 
     @Override
@@ -122,7 +122,7 @@ public class SchedulerDriverV1 extends AbstractDriverV1 implements SchedulerDriv
     }
 
     private Call newCall(GeneratedMessage.Builder builder) {
-        Message obj = builder.build();
+        Message obj = builder != null ? builder.build() : null;
         Protos.FrameworkInfo framework = this.framework.proto1();
 
         Call.Builder call = Call.newBuilder();
@@ -156,9 +156,7 @@ public class SchedulerDriverV1 extends AbstractDriverV1 implements SchedulerDriv
 
     @Override
     public void stop() {
-        sendCall(null);
-        stopped = true;
-        subscribed = false;
-        streamId = null;
+        sendCall(newCall(null));
+        state = State.STOPPED;
     }
 }

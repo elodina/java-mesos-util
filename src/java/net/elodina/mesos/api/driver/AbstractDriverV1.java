@@ -16,8 +16,7 @@ public abstract class AbstractDriverV1 {
     protected String url;
     protected Period reconnectDelay = new Period("5s");
 
-    protected volatile boolean stopped;
-    protected volatile boolean subscribed;
+    protected volatile State state = State.CREATED;
     protected volatile String streamId;
 
     protected AbstractDriverV1(String url) {
@@ -27,11 +26,14 @@ public abstract class AbstractDriverV1 {
     public Period getReconnectDelay() { return reconnectDelay; }
     public void setReconnectDelay(Period reconnectDelay) { this.reconnectDelay = reconnectDelay; }
 
-    public boolean run()  {
-        stopped = false;
+    public State getState() { return state; }
 
-        while (!stopped) {
+    public boolean run()  {
+        if (state != State.CREATED) throw new IllegalStateException("!created");
+
+        while (state != State.STOPPED) {
             try {
+                state = State.STARTED;
                 run0();
             } catch (IOException | DriverException e) {
                 if (e instanceof DriverException && ((DriverException)e).isUnrecoverable()) {
@@ -50,9 +52,6 @@ public abstract class AbstractDriverV1 {
     }
 
     private void run0() throws IOException {
-        subscribed = false;
-        streamId = null;
-
         try (Request request = new Request(url)) {
             request.method(Request.Method.POST)
                 .contentType("application/json")
@@ -70,7 +69,7 @@ public abstract class AbstractDriverV1 {
             streamId = response.header("Mesos-Stream-Id");
 
             InputStream stream = response.stream();
-            while (!stopped) {
+            while (state != State.STOPPED) {
                 int size = readChunkSize(stream);
                 byte[] buffer = readChunk(stream, size);
 
@@ -85,6 +84,8 @@ public abstract class AbstractDriverV1 {
             }
 
             stream.close();
+        } finally {
+            streamId = null;
         }
     }
 
@@ -143,4 +144,7 @@ public abstract class AbstractDriverV1 {
         return url;
     }
 
+    public enum State {
+        CREATED, STARTED, SUBSCRIBED, STOPPED
+    }
 }
