@@ -1,7 +1,7 @@
 apply plugin: 'idea'
 apply plugin: 'java'
 
-version = '0.0.3.0'
+version = '0.1.0.0'
 
 jar.archiveName = "util-mesos-${version}.jar"
 buildDir = 'out/gradle'
